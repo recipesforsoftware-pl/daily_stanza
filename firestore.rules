@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Poems: public read for approved poems, no public writes.
+    match /poems/{poemId} {
+      allow read: if resource.data.isApproved == true;
+      allow create, update, delete: if false;
+    }
+
+    // Daily assignments: public read for published assignments, no public writes.
+    match /daily_poems/{assignmentId} {
+      allow read: if resource.data.isPublished == true;
+      allow create, update, delete: if false;
+    }
+  }
+}

@@ -34,6 +34,7 @@ macos/Flutter/ephemeral/
 # Local helper materials used by OpenCode
 /ui/
 /skills-main/
+/skill/
 
 # Firebase secrets
 **/service-account*.json
