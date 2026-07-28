@@ -1,0 +1,70 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        shell: bash
+        run: |
+          git ls-files -z '*.dart' |
+            xargs -0 dart format --output=none --set-exit-if-changed
+
+      - name: Analyze code
+        run: flutter analyze --no-pub
+
+      - name: Run tests
+        run: flutter test --no-pub
+
+  firestore-rules:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: firebase/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install Firebase dependencies
+        working-directory: firebase
+        run: npm ci
+
+      - name: Run Firestore Rules tests
+        run: |
+          ./firebase/node_modules/.bin/firebase emulators:exec \
+            --only firestore \
+            --project demo-daily-stanza \
+            "cd firebase && node ./node_modules/jest/bin/jest.js --runInBand"
