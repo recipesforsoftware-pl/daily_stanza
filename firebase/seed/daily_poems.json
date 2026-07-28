@@ -1,0 +1,16 @@
+[
+  {
+    "id": "en_20260728",
+    "date": "2026-07-28",
+    "languageCode": "en",
+    "poemId": "william_blake_the_tyger",
+    "isPublished": true
+  },
+  {
+    "id": "pl_20260728",
+    "date": "2026-07-28",
+    "languageCode": "pl",
+    "poemId": "juliusz_slowacki_testament_moj",
+    "isPublished": true
+  }
+]

@@ -34,3 +34,10 @@ macos/Flutter/ephemeral/
 # Firebase secrets
 **/service-account*.json
 **/*firebase-adminsdk*.json
+
+# Firebase Emulator and Node
+firebase/node_modules/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
