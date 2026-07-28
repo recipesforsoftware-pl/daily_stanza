@@ -1,20 +1,28 @@
-# daily_stanza
+# Daily Stanza
 
-A new Flutter project.
+> One poem. One quiet moment. Every day.
 
-## Getting Started
+Daily Stanza is a portfolio-focused Flutter application that presents
+one curated public-domain poem each day.
 
-This project is a starting point for a Flutter application.
+The project demonstrates production-oriented Flutter development using
+BLoC, Firebase Firestore, offline persistence, automated testing and
+GitHub Actions.
 
-A few resources to get you started if this is your first Flutter project:
+## Current status
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+🚧 Active development
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The current version includes:
+
+- daily poem delivery from Firestore
+- loading, missing, cached and failure states
+- offline Firestore persistence
+- retry handling
+- responsive Flutter UI
+- BLoC and widget tests
+- Firestore Security Rules tests
+- GitHub Actions CI
 
 ## Local development
 
