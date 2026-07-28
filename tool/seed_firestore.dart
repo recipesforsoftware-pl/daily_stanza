@@ -1,8 +1,10 @@
 // Copyright 2026 Daily Stanza contributors.
-// This script seeds the Firestore emulator with poem and daily-assignment data.
+//
+// Seeds the Firestore emulator with poem and daily-assignment data.
 //
 // Usage:
 //   dart run tool/seed_firestore.dart
+//   dart run tool/seed_firestore.dart --date 2026-07-28
 //
 // Requirements:
 //   Start the Firestore emulator first:
@@ -34,136 +36,268 @@ const _dailyRequiredFields = [
   'isPublished',
 ];
 
-void main(List<String> arguments) async {
+Future<void> main(List<String> arguments) async {
+  final date = _parseDate(arguments);
+  final compactDate = _formatCompactDate(date);
+  final isoDate = _formatIsoDate(date);
+
   const projectId = 'demo-daily-stanza';
-  stdout.writeln('Targeting Firestore emulator on localhost:8080');
+  const emulatorHost = 'localhost';
+  const emulatorPort = 8080;
+
+  stdout.writeln('Targeting Firestore emulator on $emulatorHost:$emulatorPort');
+  stdout.writeln('Using date: $isoDate');
 
   const baseUrl =
-      'http://localhost:8080/v1/projects/$projectId/databases/(default)'
-      '/documents';
+      'http://$emulatorHost:$emulatorPort/'
+      'v1/projects/$projectId/databases/(default)/documents';
 
-  // Read seed files.
   final poemsFile = File('firebase/seed/poems.json');
-  final dailyFile = File('firebase/seed/daily_poems.json');
+  final dailyPoemsFile = File('firebase/seed/daily_poems.json');
 
-  if (!poemsFile.existsSync()) {
-    stderr.writeln('Error: ${poemsFile.path} not found');
-    exit(1);
-  }
-  if (!dailyFile.existsSync()) {
-    stderr.writeln('Error: ${dailyFile.path} not found');
-    exit(1);
-  }
+  _ensureFileExists(poemsFile);
+  _ensureFileExists(dailyPoemsFile);
 
   final poems = _loadJsonArray(poemsFile);
-  final dailyPoems = _loadJsonArray(dailyFile);
+  final dailyPoems = _loadJsonArray(dailyPoemsFile);
 
-  // Validate.
+  // Assignment document IDs use yyyyMMdd, while the stored date field
+  // uses the ISO yyyy-MM-dd format.
+  for (final dailyPoem in dailyPoems) {
+    final languageCode = dailyPoem['languageCode'];
+
+    if (languageCode is! String || languageCode.isEmpty) {
+      stderr.writeln(
+        'Error: daily poem assignment has an invalid languageCode',
+      );
+      exit(1);
+    }
+
+    dailyPoem['id'] = '${languageCode}_$compactDate';
+    dailyPoem['date'] = isoDate;
+  }
+
   _validatePoems(poems);
   _validateDailyPoems(dailyPoems);
   _validateCrossReferences(poems, dailyPoems);
 
-  // Write documents.
   final client = HttpClient();
-  var written = 0;
+  var writtenDocuments = 0;
 
   try {
     for (final poem in poems) {
-      final id = poem['id'] as String;
+      final documentId = poem['id'] as String;
+
       await _writeDocument(
         client: client,
         baseUrl: baseUrl,
         collection: 'poems',
-        documentId: id,
+        documentId: documentId,
         data: poem,
       );
-      written++;
-      stdout.writeln('  ✓ poems/$id');
+
+      writtenDocuments++;
+      stdout.writeln('  ✓ poems/$documentId');
     }
 
-    for (final dp in dailyPoems) {
-      final id = dp['id'] as String;
+    for (final dailyPoem in dailyPoems) {
+      final documentId = dailyPoem['id'] as String;
+
       await _writeDocument(
         client: client,
         baseUrl: baseUrl,
         collection: 'daily_poems',
-        documentId: id,
-        data: dp,
+        documentId: documentId,
+        data: dailyPoem,
       );
-      written++;
-      stdout.writeln('  ✓ daily_poems/$id');
+
+      writtenDocuments++;
+      stdout.writeln('  ✓ daily_poems/$documentId');
     }
+  } on SocketException catch (error) {
+    stderr.writeln(
+      '\nError: could not connect to the Firestore emulator at '
+      '$emulatorHost:$emulatorPort.',
+    );
+    stderr.writeln(
+      'Start it with: '
+      'firebase emulators:start --only firestore',
+    );
+    stderr.writeln('Details: $error');
+    exit(1);
   } finally {
-    client.close();
+    client.close(force: true);
   }
 
-  stdout.writeln('\nDone. $written documents written.');
+  stdout.writeln('\nDone. $writtenDocuments documents written.');
+}
+
+void _ensureFileExists(File file) {
+  if (!file.existsSync()) {
+    stderr.writeln('Error: ${file.path} not found');
+    exit(1);
+  }
+}
+
+DateTime _parseDate(List<String> arguments) {
+  if (arguments.isEmpty) {
+    return DateTime.now();
+  }
+
+  if (arguments.length != 2 || arguments.first != '--date') {
+    stderr.writeln(
+      'Error: unsupported arguments.\n'
+      'Usage: dart run tool/seed_firestore.dart '
+      '[--date YYYY-MM-DD]',
+    );
+    exit(1);
+  }
+
+  return _parseIsoDate(arguments[1]);
+}
+
+DateTime _parseIsoDate(String value) {
+  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(value);
+
+  if (match == null) {
+    stderr.writeln('Error: --date must be YYYY-MM-DD, got "$value"');
+    exit(1);
+  }
+
+  final year = int.parse(match.group(1)!);
+  final month = int.parse(match.group(2)!);
+  final day = int.parse(match.group(3)!);
+
+  final date = DateTime(year, month, day);
+
+  // DateTime normalizes invalid dates, for example 2026-02-31.
+  // Compare the resulting values to reject such input.
+  if (date.year != year || date.month != month || date.day != day) {
+    stderr.writeln('Error: --date is not a valid calendar date, got "$value"');
+    exit(1);
+  }
+
+  return date;
+}
+
+String _formatCompactDate(DateTime date) {
+  final year = date.year.toString().padLeft(4, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+
+  return '$year$month$day';
+}
+
+String _formatIsoDate(DateTime date) {
+  final year = date.year.toString().padLeft(4, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+
+  return '$year-$month-$day';
 }
 
 List<Map<String, dynamic>> _loadJsonArray(File file) {
-  final content = file.readAsStringSync();
-  final decoded = jsonDecode(content);
-  if (decoded is! List) {
-    stderr.writeln('Error: ${file.path} must be a JSON array');
+  try {
+    final content = file.readAsStringSync();
+    final decoded = jsonDecode(content);
+
+    if (decoded is! List) {
+      stderr.writeln('Error: ${file.path} must contain a JSON array');
+      exit(1);
+    }
+
+    return decoded.map<Map<String, dynamic>>((entry) {
+      if (entry is! Map<String, dynamic>) {
+        stderr.writeln(
+          'Error: every entry in ${file.path} must be a JSON object',
+        );
+        exit(1);
+      }
+
+      return Map<String, dynamic>.from(entry);
+    }).toList();
+  } on FormatException catch (error) {
+    stderr.writeln(
+      'Error: ${file.path} contains invalid JSON: ${error.message}',
+    );
     exit(1);
   }
-  return decoded.cast<Map<String, dynamic>>();
 }
 
 void _validatePoems(List<Map<String, dynamic>> poems) {
-  for (var i = 0; i < poems.length; i++) {
-    final poem = poems[i];
+  for (var index = 0; index < poems.length; index++) {
+    final poem = poems[index];
+
     for (final field in _poemRequiredFields) {
       if (field == 'isApproved') {
         if (poem[field] is! bool || poem[field] != true) {
-          stderr.writeln('Error: poems.json[$i] "$field" must be true');
+          stderr.writeln('Error: poems.json[$index] "$field" must be true');
           exit(1);
         }
-      } else {
-        if (poem[field] == null ||
-            (poem[field] is String && (poem[field] as String).isEmpty)) {
-          stderr.writeln(
-            'Error: poems.json[$i] missing required field "$field"',
-          );
-          exit(1);
-        }
+
+        continue;
+      }
+
+      final value = poem[field];
+
+      if (value == null || (value is String && value.trim().isEmpty)) {
+        stderr.writeln(
+          'Error: poems.json[$index] '
+          'missing required field "$field"',
+        );
+        exit(1);
       }
     }
   }
 }
 
 void _validateDailyPoems(List<Map<String, dynamic>> dailyPoems) {
-  for (var i = 0; i < dailyPoems.length; i++) {
-    final dp = dailyPoems[i];
+  for (var index = 0; index < dailyPoems.length; index++) {
+    final dailyPoem = dailyPoems[index];
+
     for (final field in _dailyRequiredFields) {
       if (field == 'isPublished') {
-        if (dp[field] is! bool || dp[field] != true) {
-          stderr.writeln('Error: daily_poems.json[$i] "$field" must be true');
-          exit(1);
-        }
-      } else if (field == 'date') {
-        final value = dp[field];
-        if (value == null || value is! String || value.isEmpty) {
+        if (dailyPoem[field] is! bool || dailyPoem[field] != true) {
           stderr.writeln(
-            'Error: daily_poems.json[$i] missing required field "$field"',
+            'Error: daily_poems.json[$index] '
+            '"$field" must be true',
           );
           exit(1);
         }
+
+        continue;
+      }
+
+      if (field == 'date') {
+        final value = dailyPoem[field];
+
+        if (value is! String || value.trim().isEmpty) {
+          stderr.writeln(
+            'Error: daily_poems.json[$index] '
+            'missing required field "$field"',
+          );
+          exit(1);
+        }
+
         if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) {
           stderr.writeln(
-            'Error: daily_poems.json[$i] "date" must be YYYY-MM-DD, '
-            'got "$value"',
+            'Error: daily_poems.json[$index] '
+            '"date" must be YYYY-MM-DD, got "$value"',
           );
           exit(1);
         }
-      } else {
-        if (dp[field] == null ||
-            (dp[field] is String && (dp[field] as String).isEmpty)) {
-          stderr.writeln(
-            'Error: daily_poems.json[$i] missing required field "$field"',
-          );
-          exit(1);
-        }
+
+        continue;
+      }
+
+      final value = dailyPoem[field];
+
+      if (value == null || (value is String && value.trim().isEmpty)) {
+        stderr.writeln(
+          'Error: daily_poems.json[$index] '
+          'missing required field "$field"',
+        );
+        exit(1);
       }
     }
   }
@@ -173,54 +307,65 @@ void _validateCrossReferences(
   List<Map<String, dynamic>> poems,
   List<Map<String, dynamic>> dailyPoems,
 ) {
-  final poemIds = poems.map((p) => p['id'] as String).toSet();
-  for (var i = 0; i < dailyPoems.length; i++) {
-    final poemId = dailyPoems[i]['poemId'] as String;
-    if (!poemIds.contains(poemId)) {
+  final poemIds = poems.map((poem) => poem['id']).whereType<String>().toSet();
+
+  for (var index = 0; index < dailyPoems.length; index++) {
+    final poemId = dailyPoems[index]['poemId'];
+
+    if (poemId is! String || !poemIds.contains(poemId)) {
       stderr.writeln(
-        'Error: daily_poems.json[$i] references unknown poemId "$poemId"',
+        'Error: daily_poems.json[$index] '
+        'references unknown poemId "$poemId"',
       );
       exit(1);
     }
   }
 }
 
-/// Converts a flat JSON map to Firestore REST API `fields` format.
+/// Converts a flat JSON map to the Firestore REST API `fields` format.
 Map<String, dynamic> _toFirestoreFields(Map<String, dynamic> data) {
   final fields = <String, dynamic>{};
+
   for (final entry in data.entries) {
-    final key = entry.key;
-    final value = entry.value;
-    if (value is String) {
-      fields[key] = {'stringValue': value};
-    } else if (value is bool) {
-      fields[key] = {'booleanValue': value};
-    } else if (value is int) {
-      fields[key] = {'integerValue': value.toString()};
-    } else if (value is double) {
-      fields[key] = {'doubleValue': value};
-    } else if (value is List) {
-      fields[key] = {
-        'arrayValue': {'values': value.map(_toFirestoreValue).toList()},
-      };
-    } else if (value is Map) {
-      fields[key] = {
-        'mapValue': {
-          'fields': _toFirestoreFields(value.cast<String, dynamic>()),
-        },
-      };
-    } else {
-      fields[key] = {'stringValue': value.toString()};
-    }
+    fields[entry.key] = _toFirestoreValue(entry.value);
   }
+
   return fields;
 }
 
 Map<String, dynamic> _toFirestoreValue(dynamic value) {
-  if (value is String) return {'stringValue': value};
-  if (value is bool) return {'booleanValue': value};
-  if (value is int) return {'integerValue': value.toString()};
-  if (value is double) return {'doubleValue': value};
+  if (value == null) {
+    return {'nullValue': null};
+  }
+
+  if (value is String) {
+    return {'stringValue': value};
+  }
+
+  if (value is bool) {
+    return {'booleanValue': value};
+  }
+
+  if (value is int) {
+    return {'integerValue': value.toString()};
+  }
+
+  if (value is double) {
+    return {'doubleValue': value};
+  }
+
+  if (value is List) {
+    return {
+      'arrayValue': {'values': value.map(_toFirestoreValue).toList()},
+    };
+  }
+
+  if (value is Map) {
+    return {
+      'mapValue': {'fields': _toFirestoreFields(value.cast<String, dynamic>())},
+    };
+  }
+
   return {'stringValue': value.toString()};
 }
 
@@ -231,24 +376,34 @@ Future<void> _writeDocument({
   required String documentId,
   required Map<String, dynamic> data,
 }) async {
-  final url = '$baseUrl/$collection/$documentId';
-  final fields = _toFirestoreFields(data);
-  final body = jsonEncode({'fields': fields});
+  final encodedCollection = Uri.encodeComponent(collection);
+  final encodedDocumentId = Uri.encodeComponent(documentId);
 
-  final uri = Uri.parse(url);
-  final request = await client.putUrl(uri);
+  final uri = Uri.parse('$baseUrl/$encodedCollection/$encodedDocumentId');
+
+  final request = await client.patchUrl(uri);
+
   request.headers.contentType = ContentType.json;
-  request.write(body);
+
+  // Emulator-only administrator token.
+  // It bypasses Firestore Security Rules when seeding local data.
+  request.headers.set(HttpHeaders.authorizationHeader, 'Bearer owner');
+
+  request.write(jsonEncode({'fields': _toFirestoreFields(data)}));
 
   final response = await request.close();
-  final statusCode = response.statusCode;
+  final responseBody = await response.transform(utf8.decoder).join();
 
-  // 200 = updated, 409 = already exists (ok for seeding)
-  if (statusCode != 200 && statusCode != 409) {
-    stderr.writeln('Error writing $collection/$documentId: HTTP $statusCode');
-    response.transform(utf8.decoder).listen((body) {
-      stderr.writeln('  $body');
-    });
+  if (response.statusCode != HttpStatus.ok) {
+    stderr.writeln(
+      'Error writing $collection/$documentId: '
+      'HTTP ${response.statusCode}',
+    );
+
+    if (responseBody.isNotEmpty) {
+      stderr.writeln('  $responseBody');
+    }
+
     exit(1);
   }
 }

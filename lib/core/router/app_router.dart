@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:daily_stanza/core/widgets/scaffold_with_nav_bar.dart';
-import 'package:daily_stanza/features/today/today_view.dart';
+import 'package:daily_stanza/features/daily_poem/domain/repository/poem_repository.dart';
+import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_bloc.dart';
+import 'package:daily_stanza/features/daily_poem/presentation/view/today_view.dart';
 import 'package:daily_stanza/features/favourites/favourites_view.dart';
 import 'package:daily_stanza/features/settings/settings_view.dart';
 
@@ -20,7 +23,11 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/today',
-              builder: (context, state) => const TodayView(),
+              builder: (context, state) => BlocProvider(
+                create: (context) =>
+                    DailyPoemBloc(repository: context.read<PoemRepository>()),
+                child: const TodayView(),
+              ),
               routes: [
                 GoRoute(
                   path: 'poem/:id',
