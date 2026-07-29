@@ -40,7 +40,7 @@ The current version includes:
 - Android application ID: `pl.recipesforsoftware.dailystanza`
 - iOS bundle identifier: `pl.recipesforsoftware.dailystanza`
 - explicit environment-driven Firestore emulator workflow
-- 415 automated tests (unit + widget)
+- 410 automated tests (unit + widget)
 - Firestore Security Rules tests (6 rules tests)
 - GitHub Actions CI
 
