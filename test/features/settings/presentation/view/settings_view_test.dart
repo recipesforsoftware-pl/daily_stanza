@@ -4,46 +4,75 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
+import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_state.dart';
 import 'package:daily_stanza/features/settings/presentation/view/settings_view.dart';
 
 class MockLanguagePreferencesCubit
     extends MockBloc<LanguagePreferencesCubit, LanguagePreferencesState>
     implements LanguagePreferencesCubit {}
 
-Widget _buildApp(MockLanguagePreferencesCubit cubit) {
+class MockThemePreferencesCubit
+    extends MockBloc<ThemePreferencesCubit, ThemePreferencesState>
+    implements ThemePreferencesCubit {}
+
+Widget _buildApp({
+  required MockLanguagePreferencesCubit langCubit,
+  required MockThemePreferencesCubit themeCubit,
+}) {
   return MaterialApp(
-    home: BlocProvider<LanguagePreferencesCubit>.value(
-      value: cubit,
+    home: MultiBlocProvider(
+      providers: [
+        BlocProvider<LanguagePreferencesCubit>.value(value: langCubit),
+        BlocProvider<ThemePreferencesCubit>.value(value: themeCubit),
+      ],
       child: const SettingsView(),
     ),
   );
 }
 
 void main() {
-  late MockLanguagePreferencesCubit mockCubit;
+  late MockLanguagePreferencesCubit mockLangCubit;
+  late MockThemePreferencesCubit mockThemeCubit;
 
   setUpAll(() {
     registerFallbackValue(PoemLanguage.english);
     registerFallbackValue(PoemLanguage.polish);
+    registerFallbackValue(ThemePreference.system);
+    registerFallbackValue(ThemePreference.light);
+    registerFallbackValue(ThemePreference.dark);
   });
 
   setUp(() {
-    mockCubit = MockLanguagePreferencesCubit();
+    mockLangCubit = MockLanguagePreferencesCubit();
+    mockThemeCubit = MockThemePreferencesCubit();
   });
 
   group('SettingsView', () {
+    // --- Existing language preference tests (unchanged) ---
+
     testWidgets('Settings title', (tester) async {
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.english,
         ),
       );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
       expect(find.text('Settings'), findsOneWidget);
@@ -51,29 +80,47 @@ void main() {
 
     testWidgets('Poem language title', (tester) async {
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.english,
         ),
       );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
       expect(find.text('Poem language'), findsOneWidget);
     });
 
-    testWidgets('description', (tester) async {
+    testWidgets('Poem language description', (tester) async {
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.english,
         ),
       );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
       expect(
@@ -84,14 +131,23 @@ void main() {
 
     testWidgets('English option', (tester) async {
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.english,
         ),
       );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
       expect(find.text('English'), findsOneWidget);
@@ -99,32 +155,49 @@ void main() {
 
     testWidgets('Polski option', (tester) async {
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.english,
         ),
       );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
       expect(find.text('Polski'), findsOneWidget);
     });
 
-    testWidgets('current option selected', (tester) async {
+    testWidgets('current language option selected', (tester) async {
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.polish,
         ),
       );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
-      // RadioGroup should have groupValue = Polish
       final radioGroup = tester.widget<RadioGroup<PoemLanguage>>(
         find.byType(RadioGroup<PoemLanguage>),
       );
@@ -135,15 +208,24 @@ void main() {
       tester,
     ) async {
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.polish,
         ),
       );
-      when(() => mockCubit.changeLanguage(any())).thenAnswer((_) async {});
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      when(() => mockLangCubit.changeLanguage(any())).thenAnswer((_) async {});
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
       await tester.tap(
@@ -151,20 +233,31 @@ void main() {
       );
       await tester.pump();
 
-      verify(() => mockCubit.changeLanguage(PoemLanguage.english)).called(1);
+      verify(
+        () => mockLangCubit.changeLanguage(PoemLanguage.english),
+      ).called(1);
     });
 
     testWidgets('tapping Polish calls changeLanguage(polish)', (tester) async {
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.english,
         ),
       );
-      when(() => mockCubit.changeLanguage(any())).thenAnswer((_) async {});
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      when(() => mockLangCubit.changeLanguage(any())).thenAnswer((_) async {});
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
       await tester.tap(
@@ -172,45 +265,63 @@ void main() {
       );
       await tester.pump();
 
-      verify(() => mockCubit.changeLanguage(PoemLanguage.polish)).called(1);
+      verify(() => mockLangCubit.changeLanguage(PoemLanguage.polish)).called(1);
     });
 
-    testWidgets('controls disabled while saving', (tester) async {
+    testWidgets('language controls disabled while language isSaving', (
+      tester,
+    ) async {
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.english,
           isSaving: true,
         ),
       );
-
-      await tester.pumpWidget(_buildApp(mockCubit));
-      await tester.pump();
-
-      // AbsorbPointer should be absorbing when isSaving is true
-      // Scope to the AbsorbPointer that has absorbing enabled.
-      final absorber = tester.widget<AbsorbPointer>(
-        find.byWidgetPredicate(
-          (widget) => widget is AbsorbPointer && widget.absorbing,
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
         ),
       );
-      expect(absorber.absorbing, isTrue);
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      // The AbsorbPointer for the language section should be absorbing
+      final absorbers = find.byWidgetPredicate(
+        (widget) => widget is AbsorbPointer && widget.absorbing,
+      );
+      // There should be at least one absorbing AbsorbPointer (the language one)
+      expect(absorbers, findsAtLeast(1));
     });
 
-    testWidgets('supporting local-storage text', (tester) async {
+    testWidgets('language supporting local-storage text', (tester) async {
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.english,
         ),
       );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
-      expect(find.text('Saved on this device.'), findsOneWidget);
+      expect(find.text('Saved on this device.'), findsAtLeast(1));
     });
 
     testWidgets('no overflow at 360x800', (tester) async {
@@ -219,14 +330,51 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.english,
         ),
       );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('no overflow at 390x844', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
       expect(tester.takeException(), isNull);
@@ -238,17 +386,459 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       whenListen(
-        mockCubit,
+        mockLangCubit,
         const Stream<LanguagePreferencesState>.empty(),
         initialState: const LanguagePreferencesState(
           language: PoemLanguage.english,
         ),
       );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
 
-      await tester.pumpWidget(_buildApp(mockCubit));
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
       await tester.pump();
 
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('no overflow with increased text scale', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.platformDispatcher.textScaleFactorTestValue = 1.5;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.platformDispatcher.clearTextScaleFactorTestValue();
+      });
+
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    // --- New Appearance section tests ---
+
+    testWidgets('Appearance section is visible', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      expect(find.text('Appearance'), findsOneWidget);
+    });
+
+    testWidgets('Appearance description is visible', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      expect(
+        find.text('Choose how Daily Stanza looks on this device.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('System option is visible', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      expect(find.text('System'), findsOneWidget);
+    });
+
+    testWidgets('Light option is visible', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      expect(find.text('Light'), findsOneWidget);
+    });
+
+    testWidgets('Dark option is visible', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      expect(find.text('Dark'), findsOneWidget);
+    });
+
+    testWidgets('correct theme option is selected', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.dark,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      final themeRadioGroup = tester.widget<RadioGroup<ThemePreference>>(
+        find.byType(RadioGroup<ThemePreference>),
+      );
+      expect(themeRadioGroup.groupValue, ThemePreference.dark);
+    });
+
+    testWidgets('tapping System calls changeTheme(system)', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.light,
+        ),
+      );
+      when(() => mockThemeCubit.changeTheme(any())).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      await tester.tap(
+        find.widgetWithText(RadioListTile<ThemePreference>, 'System'),
+      );
+      await tester.pump();
+
+      verify(
+        () => mockThemeCubit.changeTheme(ThemePreference.system),
+      ).called(1);
+    });
+
+    testWidgets('tapping Light calls changeTheme(light)', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      when(() => mockThemeCubit.changeTheme(any())).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      await tester.tap(
+        find.widgetWithText(RadioListTile<ThemePreference>, 'Light'),
+      );
+      await tester.pump();
+
+      verify(() => mockThemeCubit.changeTheme(ThemePreference.light)).called(1);
+    });
+
+    testWidgets('tapping Dark calls changeTheme(dark)', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      when(() => mockThemeCubit.changeTheme(any())).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      await tester.tap(
+        find.widgetWithText(RadioListTile<ThemePreference>, 'Dark'),
+      );
+      await tester.pump();
+
+      verify(() => mockThemeCubit.changeTheme(ThemePreference.dark)).called(1);
+    });
+
+    testWidgets('theme controls disabled while theme isSaving', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+          isSaving: true,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      // The AbsorbPointer wrapping the theme controls should be absorbing
+      // Find all AbsorbPointer widgets that are absorbing
+      final absorbers = find.byWidgetPredicate(
+        (widget) => widget is AbsorbPointer && widget.absorbing,
+      );
+      // There should be at least one
+      expect(absorbers, findsAtLeast(1));
+    });
+
+    testWidgets('language controls remain enabled while theme isSaving', (
+      tester,
+    ) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+          isSaving: true,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      // Language section's AbsorbPointer should NOT be absorbing
+      // Find the language RadioGroup and check its parent is not absorbing
+      final langRadioGroup = find.byType(RadioGroup<PoemLanguage>);
+      expect(langRadioGroup, findsOneWidget);
+
+      // The parent AbsorbPointer of the language section should not be absorbing
+      final absorbingParent = find.ancestor(
+        of: langRadioGroup,
+        matching: find.byType(AbsorbPointer),
+      );
+      final absorber = tester.widget<AbsorbPointer>(absorbingParent.first);
+      expect(absorber.absorbing, isFalse);
+    });
+
+    testWidgets('theme controls remain enabled while language isSaving', (
+      tester,
+    ) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+          isSaving: true,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      // Theme section's AbsorbPointer should NOT be absorbing
+      final themeRadioGroup = find.byType(RadioGroup<ThemePreference>);
+      expect(themeRadioGroup, findsOneWidget);
+
+      final absorbingParent = find.ancestor(
+        of: themeRadioGroup,
+        matching: find.byType(AbsorbPointer),
+      );
+      final absorber = tester.widget<AbsorbPointer>(absorbingParent.first);
+      expect(absorber.absorbing, isFalse);
+    });
+
+    testWidgets('Appearance supporting text is visible', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      // There are two "Saved on this device." texts — one for language, one for theme
+      expect(find.text('Saved on this device.'), findsAtLeast(2));
+    });
+
+    testWidgets('no unrelated settings appear', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      // No unrelated sections should appear
+      expect(find.text('Notifications'), findsNothing);
+      expect(find.text('Account'), findsNothing);
+      expect(find.text('Subscription'), findsNothing);
     });
   });
 }

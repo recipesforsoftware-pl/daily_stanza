@@ -9,8 +9,11 @@ import 'package:daily_stanza/features/daily_poem/domain/repository/poem_reposito
 import 'package:daily_stanza/features/favourites/domain/repository/favourites_repository.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
+import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
 import 'package:daily_stanza/features/settings/domain/repository/language_preferences_repository.dart';
+import 'package:daily_stanza/features/settings/domain/repository/theme_preferences_repository.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
 
 class MockPoemRepository extends Mock implements PoemRepository {}
 
@@ -19,11 +22,15 @@ class MockFavouritesRepository extends Mock implements FavouritesRepository {}
 class MockLanguagePreferencesRepository extends Mock
     implements LanguagePreferencesRepository {}
 
+class MockThemePreferencesRepository extends Mock
+    implements ThemePreferencesRepository {}
+
 void main() {
   testWidgets('App renders without error', (tester) async {
     final mockPoemRepo = MockPoemRepository();
     final mockFavRepo = MockFavouritesRepository();
     final mockLangRepo = MockLanguagePreferencesRepository();
+    final mockThemeRepo = MockThemePreferencesRepository();
     when(
       () => mockPoemRepo.getDailyPoem(
         date: any(named: 'date'),
@@ -49,6 +56,9 @@ void main() {
     when(
       () => mockLangRepo.getPreferredLanguage(),
     ).thenAnswer((_) async => PoemLanguage.english);
+    when(
+      () => mockThemeRepo.getPreferredTheme(),
+    ).thenAnswer((_) async => ThemePreference.system);
 
     await tester.pumpWidget(
       MultiRepositoryProvider(
@@ -57,6 +67,9 @@ void main() {
           RepositoryProvider<FavouritesRepository>.value(value: mockFavRepo),
           RepositoryProvider<LanguagePreferencesRepository>.value(
             value: mockLangRepo,
+          ),
+          RepositoryProvider<ThemePreferencesRepository>.value(
+            value: mockThemeRepo,
           ),
         ],
         child: MultiBlocProvider(
@@ -71,6 +84,12 @@ void main() {
               create: (_) => LanguagePreferencesCubit(
                 repository: mockLangRepo,
                 initialLanguage: PoemLanguage.english,
+              ),
+            ),
+            BlocProvider<ThemePreferencesCubit>(
+              create: (_) => ThemePreferencesCubit(
+                repository: mockThemeRepo,
+                initialPreference: ThemePreference.system,
               ),
             ),
           ],

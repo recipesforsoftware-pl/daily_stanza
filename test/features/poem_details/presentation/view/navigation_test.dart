@@ -16,8 +16,11 @@ import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_detai
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_state.dart';
 import 'package:daily_stanza/features/poem_details/presentation/view/poem_details_view.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
+import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_state.dart';
 
 class MockFavouritesCubit extends MockBloc<FavouritesCubit, FavouritesState>
     implements FavouritesCubit {}
@@ -25,6 +28,10 @@ class MockFavouritesCubit extends MockBloc<FavouritesCubit, FavouritesState>
 class MockLanguagePreferencesCubit
     extends MockBloc<LanguagePreferencesCubit, LanguagePreferencesState>
     implements LanguagePreferencesCubit {}
+
+class MockThemePreferencesCubit
+    extends MockBloc<ThemePreferencesCubit, ThemePreferencesState>
+    implements ThemePreferencesCubit {}
 
 class MockPoemRepository extends Mock implements PoemRepository {}
 
@@ -194,13 +201,27 @@ void main() {
       return cubit;
     }
 
+    MockThemePreferencesCubit createDefaultThemeCubit() {
+      final cubit = MockThemePreferencesCubit();
+      whenListen(
+        cubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      return cubit;
+    }
+
     ({GoRouter router, Widget widget}) buildRouterApp({
       required MockPoemRepository mockRepo,
       required MockFavouritesCubit mockFavCubit,
       MockLanguagePreferencesCubit? mockLangCubit,
+      MockThemePreferencesCubit? mockThemeCubit,
     }) {
       final router = createRouter();
       final langCubit = mockLangCubit ?? createDefaultLangCubit();
+      final themeCubit = mockThemeCubit ?? createDefaultThemeCubit();
       return (
         router: router,
         widget: RepositoryProvider<PoemRepository>.value(
@@ -209,6 +230,7 @@ void main() {
             providers: [
               BlocProvider<FavouritesCubit>.value(value: mockFavCubit),
               BlocProvider<LanguagePreferencesCubit>.value(value: langCubit),
+              BlocProvider<ThemePreferencesCubit>.value(value: themeCubit),
             ],
             child: MaterialApp.router(routerConfig: router),
           ),

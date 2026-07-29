@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:daily_stanza/core/theme/app_colors.dart';
-import 'package:daily_stanza/core/theme/app_text_styles.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 
 class LanguageOptionTile extends StatelessWidget {
@@ -15,11 +13,9 @@ class LanguageOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return RadioListTile<PoemLanguage>(
-      title: Text(
-        label,
-        style: AppTextStyles.bodyLarge.copyWith(color: AppColors.lightFg),
-      ),
+      title: Text(label, style: theme.textTheme.bodyLarge),
       value: language,
       contentPadding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,

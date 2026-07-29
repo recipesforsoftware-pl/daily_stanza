@@ -14,11 +14,17 @@ import 'package:daily_stanza/features/favourites/domain/repository/favourites_re
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_state.dart';
 import 'package:daily_stanza/features/settings/data/datasource/local_language_preferences_data_source.dart';
+import 'package:daily_stanza/features/settings/data/datasource/local_theme_preferences_data_source.dart';
 import 'package:daily_stanza/features/settings/data/repository/language_preferences_repository_impl.dart';
+import 'package:daily_stanza/features/settings/data/repository/theme_preferences_repository_impl.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
+import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
 import 'package:daily_stanza/features/settings/domain/repository/language_preferences_repository.dart';
+import 'package:daily_stanza/features/settings/domain/repository/theme_preferences_repository.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +59,7 @@ void main() async {
     dataSource: localDataSource,
   );
 
+  // ---- Language preference ----
   final languagePreferencesDataSource = LocalLanguagePreferencesDataSource(
     sharedPreferences: sharedPreferences,
   );
@@ -67,6 +74,20 @@ void main() async {
     initialLanguage = PoemLanguage.english;
   }
 
+  // ---- Theme preference ----
+  final themePreferencesDataSource = LocalThemePreferencesDataSource(
+    sharedPreferences: sharedPreferences,
+  );
+  final themePreferencesRepository = ThemePreferencesRepositoryImpl(
+    dataSource: themePreferencesDataSource,
+  );
+  ThemePreference initialPreference;
+  try {
+    initialPreference = await themePreferencesRepository.getPreferredTheme();
+  } catch (_) {
+    initialPreference = ThemePreference.system;
+  }
+
   final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   runApp(
@@ -78,6 +99,9 @@ void main() async {
         ),
         RepositoryProvider<LanguagePreferencesRepository>.value(
           value: languagePreferencesRepository,
+        ),
+        RepositoryProvider<ThemePreferencesRepository>.value(
+          value: themePreferencesRepository,
         ),
       ],
       child: MultiBlocProvider(
@@ -92,6 +116,12 @@ void main() async {
             create: (_) => LanguagePreferencesCubit(
               repository: languagePreferencesRepository,
               initialLanguage: initialLanguage,
+            ),
+          ),
+          BlocProvider<ThemePreferencesCubit>(
+            create: (_) => ThemePreferencesCubit(
+              repository: themePreferencesRepository,
+              initialPreference: initialPreference,
             ),
           ),
         ],
@@ -121,6 +151,19 @@ void main() async {
               },
             ),
             BlocListener<LanguagePreferencesCubit, LanguagePreferencesState>(
+              listenWhen: (previous, current) {
+                return current.mutationError != null &&
+                    current.mutationError != previous.mutationError;
+              },
+              listener: (context, state) {
+                final error = state.mutationError;
+                if (error == null) return;
+                scaffoldMessengerKey.currentState
+                  ?..hideCurrentSnackBar()
+                  ..showSnackBar(SnackBar(content: Text(error)));
+              },
+            ),
+            BlocListener<ThemePreferencesCubit, ThemePreferencesState>(
               listenWhen: (previous, current) {
                 return current.mutationError != null &&
                     current.mutationError != previous.mutationError;

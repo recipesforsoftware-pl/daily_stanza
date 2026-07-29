@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:daily_stanza/core/theme/app_colors.dart';
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_cubit.dart';
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_state.dart';
 import 'package:daily_stanza/features/poem_details/presentation/widgets/poem_details_content.dart';
@@ -13,7 +12,6 @@ class PoemDetailsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Poem')),
-      backgroundColor: AppColors.lightBg,
       body: BlocBuilder<PoemDetailsCubit, PoemDetailsState>(
         builder: (context, state) {
           return switch (state) {

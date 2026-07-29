@@ -19,8 +19,10 @@ The current version includes:
 - loading, missing, cached and failure states
 - offline Firestore persistence
 - local English and Polish daily-poem preference
-- language selection persisted on-device with SharedPreferences
-- functional Settings screen
+- System/Light/Dark appearance preference
+- language and appearance selection persisted on-device with SharedPreferences
+- appearance follows the device setting when System is selected
+- functional Settings screen with language and appearance sections
 - retry handling
 - responsive Flutter UI
 - local favourites persisted with SharedPreferences
@@ -28,8 +30,8 @@ The current version includes:
 - favourites mutation error presented as single SnackBar via global listener
 - route-level error boundaries and failure states
 - full GoRouter integration with shell navigation
-- 234 automated tests (unit + widget)
-- Firestore Security Rules tests
+- 311 automated tests (unit + widget)
+- Firestore Security Rules tests (6 rules tests)
 - GitHub Actions CI
 
 ## Architecture
