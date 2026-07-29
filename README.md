@@ -30,7 +30,13 @@ The current version includes:
 - favourites mutation error presented as single SnackBar via global listener
 - route-level error boundaries and failure states
 - full GoRouter integration with shell navigation
-- 311 automated tests (unit + widget)
+- poem sharing via native share sheet (share_plus 13.3.0)
+- share button on Today view (with label) and Poem Details AppBar (icon-only)
+- share text: `{title}\nby {author}\n\n{content}\n\nShared from Daily Stanza`
+- share subject: `{title} by {author}`
+- result mapping: success→completed, dismissed→dismissed, unavailable→unavailable (no error)
+- sharing does not reload poems, alter navigation, favourites, language, or theme
+- 390 automated tests (unit + widget)
 - Firestore Security Rules tests (6 rules tests)
 - GitHub Actions CI
 

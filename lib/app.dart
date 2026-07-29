@@ -5,26 +5,55 @@ import 'package:daily_stanza/core/router/app_router.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_state.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preference_ext.dart';
+import 'package:daily_stanza/features/share_poem/application/poem_share_text_builder.dart';
+import 'package:daily_stanza/features/share_poem/data/service/share_plus_poem_share_service.dart';
+import 'package:daily_stanza/features/share_poem/domain/service/poem_share_service.dart';
+import 'package:daily_stanza/features/share_poem/presentation/cubit/poem_share_cubit.dart';
+import 'package:daily_stanza/features/share_poem/presentation/cubit/poem_share_state.dart';
 
 class App extends StatelessWidget {
-  const App({required this.scaffoldMessengerKey, super.key});
+  App({
+    required this.scaffoldMessengerKey,
+    PoemShareService? shareService,
+    super.key,
+  }) : _shareService = shareService;
 
   final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
+  final PoemShareService? _shareService;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ThemePreferencesCubit, ThemePreferencesState>(
-      builder: (context, themeState) {
-        return MaterialApp.router(
-          scaffoldMessengerKey: scaffoldMessengerKey,
-          title: 'Daily Stanza',
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: toThemeMode(themeState.preference),
-          routerConfig: appRouter,
-          debugShowCheckedModeBanner: false,
-        );
-      },
+    return BlocProvider<PoemShareCubit>(
+      create: (_) => PoemShareCubit(
+        shareService: _shareService ?? SharePlusPoemShareService(),
+        textBuilder: const PoemShareTextBuilder(),
+      ),
+      child: BlocListener<PoemShareCubit, PoemShareState>(
+        listenWhen: (previous, current) {
+          return current.mutationError != null &&
+              current.mutationError != previous.mutationError;
+        },
+        listener: (context, state) {
+          final error = state.mutationError;
+          if (error == null) return;
+          scaffoldMessengerKey.currentState
+            ?..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(error)));
+        },
+        child: BlocBuilder<ThemePreferencesCubit, ThemePreferencesState>(
+          builder: (context, themeState) {
+            return MaterialApp.router(
+              scaffoldMessengerKey: scaffoldMessengerKey,
+              title: 'Daily Stanza',
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: toThemeMode(themeState.preference),
+              routerConfig: appRouter,
+              debugShowCheckedModeBanner: false,
+            );
+          },
+        ),
+      ),
     );
   }
 }

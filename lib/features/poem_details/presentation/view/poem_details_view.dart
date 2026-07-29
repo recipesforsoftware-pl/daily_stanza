@@ -4,6 +4,7 @@ import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_detai
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_state.dart';
 import 'package:daily_stanza/features/poem_details/presentation/widgets/poem_details_content.dart';
 import 'package:daily_stanza/features/poem_details/presentation/widgets/poem_details_status_view.dart';
+import 'package:daily_stanza/features/share_poem/presentation/widgets/share_poem_button.dart';
 
 class PoemDetailsView extends StatelessWidget {
   const PoemDetailsView({super.key});
@@ -11,7 +12,19 @@ class PoemDetailsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Poem')),
+      appBar: AppBar(
+        title: const Text('Poem'),
+        actions: [
+          BlocBuilder<PoemDetailsCubit, PoemDetailsState>(
+            builder: (context, state) {
+              if (state is! PoemDetailsLoaded) {
+                return const SizedBox.shrink();
+              }
+              return SharePoemButton(poem: state.poem);
+            },
+          ),
+        ],
+      ),
       body: BlocBuilder<PoemDetailsCubit, PoemDetailsState>(
         builder: (context, state) {
           return switch (state) {

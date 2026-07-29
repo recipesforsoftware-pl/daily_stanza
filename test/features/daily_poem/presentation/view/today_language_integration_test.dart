@@ -16,6 +16,9 @@ import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 import 'package:daily_stanza/features/settings/domain/repository/language_preferences_repository.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
+import 'package:daily_stanza/features/share_poem/domain/model/poem_share_result.dart';
+import 'package:daily_stanza/features/share_poem/domain/service/poem_share_service.dart';
+import 'package:daily_stanza/features/share_poem/presentation/cubit/poem_share_cubit.dart';
 
 class MockPoemRepository extends Mock implements PoemRepository {}
 
@@ -23,6 +26,8 @@ class MockLanguagePreferencesRepository extends Mock
     implements LanguagePreferencesRepository {}
 
 class MockFavouritesCubit extends Mock implements FavouritesCubit {}
+
+class MockPoemShareService extends Mock implements PoemShareService {}
 
 final _testDate = DateTime(2026, 7, 29);
 
@@ -42,15 +47,18 @@ Widget _buildApp({
   required DailyPoemBloc dailyPoemBloc,
   required LanguagePreferencesCubit languageCubit,
   MockFavouritesCubit? favouritesCubit,
+  PoemShareCubit? shareCubit,
   DateTime Function()? now,
 }) {
   final favCubit = favouritesCubit ?? _createDefaultFavCubit();
+  final shareCubitValue = shareCubit ?? _createDefaultShareCubit();
   return MaterialApp(
     home: MultiBlocProvider(
       providers: [
         BlocProvider<DailyPoemBloc>.value(value: dailyPoemBloc),
         BlocProvider<LanguagePreferencesCubit>.value(value: languageCubit),
         BlocProvider<FavouritesCubit>.value(value: favCubit),
+        BlocProvider<PoemShareCubit>.value(value: shareCubitValue),
       ],
       child: TodayView(now: now),
     ),
@@ -68,6 +76,18 @@ MockFavouritesCubit _createDefaultFavCubit() {
   return cubit;
 }
 
+PoemShareCubit _createDefaultShareCubit() {
+  final mockService = MockPoemShareService();
+  when(
+    () => mockService.shareText(
+      text: any(named: 'text'),
+      subject: any(named: 'subject'),
+      sharePositionOrigin: any(named: 'sharePositionOrigin'),
+    ),
+  ).thenAnswer((_) async => PoemShareResult.completed);
+  return PoemShareCubit(shareService: mockService);
+}
+
 void main() {
   late MockPoemRepository mockPoemRepo;
   late MockLanguagePreferencesRepository mockLangRepo;
@@ -81,6 +101,7 @@ void main() {
     registerFallbackValue(_testDate);
     registerFallbackValue(PoemLanguage.english);
     registerFallbackValue(PoemLanguage.polish);
+    registerFallbackValue(PoemShareResult.completed);
   });
 
   group('Today language integration', () {

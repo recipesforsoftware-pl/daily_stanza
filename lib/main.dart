@@ -25,6 +25,7 @@ import 'package:daily_stanza/features/settings/presentation/cubit/language_prefe
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_state.dart';
+import 'package:daily_stanza/features/share_poem/data/service/share_plus_poem_share_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -177,7 +178,10 @@ void main() async {
               },
             ),
           ],
-          child: App(scaffoldMessengerKey: scaffoldMessengerKey),
+          child: App(
+            scaffoldMessengerKey: scaffoldMessengerKey,
+            shareService: SharePlusPoemShareService(),
+          ),
         ),
       ),
     ),

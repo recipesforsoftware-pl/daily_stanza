@@ -4,6 +4,7 @@ import 'package:daily_stanza/core/theme/app_text_styles.dart';
 import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/widgets/offline_poem_banner.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/widgets/poem_card.dart';
+import 'package:daily_stanza/features/share_poem/presentation/widgets/share_poem_button.dart';
 
 class DailyPoemContent extends StatelessWidget {
   const DailyPoemContent({
@@ -90,6 +91,10 @@ class DailyPoemContent extends StatelessWidget {
                       ),
                     ),
                   ),
+                const SizedBox(height: 8),
+                Center(
+                  child: SharePoemButton(poem: poem, label: 'Share poem'),
+                ),
                 if (onReadFocusMode != null) ...[
                   const SizedBox(height: 8),
                   Center(

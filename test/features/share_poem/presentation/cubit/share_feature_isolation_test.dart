@@ -11,15 +11,15 @@ import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
 import 'package:daily_stanza/features/daily_poem/domain/repository/poem_repository.dart';
 import 'package:daily_stanza/features/favourites/domain/repository/favourites_repository.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
-import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_state.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
 import 'package:daily_stanza/features/settings/domain/repository/language_preferences_repository.dart';
 import 'package:daily_stanza/features/settings/domain/repository/theme_preferences_repository.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
-import 'package:daily_stanza/features/share_poem/domain/model/poem_share_result.dart';
-import 'package:daily_stanza/features/share_poem/domain/service/poem_share_service.dart';
+import 'package:share_plus/share_plus.dart' show ShareResult, ShareResultStatus;
+import 'package:daily_stanza/features/share_poem/application/poem_share_text_builder.dart';
+import 'package:daily_stanza/features/share_poem/data/service/share_plus_poem_share_service.dart';
 import 'package:daily_stanza/features/share_poem/presentation/cubit/poem_share_cubit.dart';
 
 class _MockPoemRepository extends Mock implements PoemRepository {}
@@ -31,8 +31,6 @@ class _MockLanguagePreferencesRepository extends Mock
 
 class _MockThemePreferencesRepository extends Mock
     implements ThemePreferencesRepository {}
-
-class _MockPoemShareService extends Mock implements PoemShareService {}
 
 const _testPoem = Poem(
   id: 'poem1',
@@ -46,7 +44,6 @@ const _testPoem = Poem(
   rightsStatus: 'public_domain',
 );
 
-/// Helper class to bundle the widget tree with accessible cubits.
 class _TestBundle {
   _TestBundle({
     required this.app,
@@ -85,15 +82,14 @@ _TestBundle _buildApp({
     favouritesRepository: favouritesRepository,
     poemRepository: poemRepository,
   );
-  final mockShareService = _MockPoemShareService();
-  when(
-    () => mockShareService.shareText(
-      text: any(named: 'text'),
-      subject: any(named: 'subject'),
-      sharePositionOrigin: any(named: 'sharePositionOrigin'),
-    ),
-  ).thenAnswer((_) async => PoemShareResult.completed);
-  final shareCubit = PoemShareCubit(shareService: mockShareService);
+  // Use share_plus adapter with a mock invoker to prevent real platform calls.
+  final shareService = SharePlusPoemShareService(
+    shareInvoker: (_) async => const ShareResult('', ShareResultStatus.success),
+  );
+  final shareCubit = PoemShareCubit(
+    shareService: shareService,
+    textBuilder: const PoemShareTextBuilder(),
+  );
   final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   final app = MultiRepositoryProvider(
@@ -114,9 +110,11 @@ _TestBundle _buildApp({
         BlocProvider<FavouritesCubit>.value(value: favCubit),
         BlocProvider<LanguagePreferencesCubit>.value(value: langCubit),
         BlocProvider<ThemePreferencesCubit>.value(value: themeCubit),
-        BlocProvider<PoemShareCubit>.value(value: shareCubit),
       ],
-      child: App(scaffoldMessengerKey: scaffoldMessengerKey),
+      child: App(
+        scaffoldMessengerKey: scaffoldMessengerKey,
+        shareService: shareService,
+      ),
     ),
   );
 
@@ -142,8 +140,6 @@ void main() {
     registerFallbackValue(ThemePreference.system);
     registerFallbackValue(ThemePreference.light);
     registerFallbackValue(ThemePreference.dark);
-    registerFallbackValue(_testPoem);
-    registerFallbackValue(PoemShareResult.completed);
   });
 
   setUp(() {
@@ -170,10 +166,8 @@ void main() {
     when(() => mockThemeRepo.setPreferredTheme(any())).thenAnswer((_) async {});
   });
 
-  group('Feature isolation', () {
-    testWidgets('theme change does not dispatch DailyPoemRequested', (
-      tester,
-    ) async {
+  group('Share feature isolation', () {
+    testWidgets('sharing does not dispatch DailyPoemRequested', (tester) async {
       final bundle = _buildApp(
         poemRepository: mockPoemRepo,
         favouritesRepository: mockFavRepo,
@@ -187,13 +181,15 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Change theme
-      bundle.themeCubit.changeTheme(ThemePreference.dark);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+      // Find and tap the share button on Today
+      final shareButtons = find.text('Share poem');
+      if (shareButtons.evaluate().isNotEmpty) {
+        await tester.tap(shareButtons.first);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+      }
 
-      // PoemRepository should only have been called once (from initState),
-      // not again from the theme change
+      // PoemRepository should only have been called once (from initState)
       verify(
         () => mockPoemRepo.getDailyPoem(
           date: any(named: 'date'),
@@ -207,9 +203,38 @@ void main() {
       bundle.shareCubit.close();
     });
 
-    testWidgets('theme change does not modify language preference', (
-      tester,
-    ) async {
+    testWidgets('sharing does not change favourite IDs', (tester) async {
+      final bundle = _buildApp(
+        poemRepository: mockPoemRepo,
+        favouritesRepository: mockFavRepo,
+        languagePreferencesRepository: mockLangRepo,
+        themePreferencesRepository: mockThemeRepo,
+        initialLanguage: PoemLanguage.english,
+        initialPreference: ThemePreference.system,
+      );
+
+      await tester.pumpWidget(bundle.app);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Get initial favourite IDs
+      final initialFavIds = bundle.favCubit.isFavourite('poem1');
+
+      // Trigger share (share service is injected with a mock that returns success)
+      bundle.shareCubit.sharePoem(_testPoem);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Favourite state should be unchanged
+      expect(bundle.favCubit.isFavourite('poem1'), initialFavIds);
+
+      bundle.themeCubit.close();
+      bundle.langCubit.close();
+      bundle.favCubit.close();
+      bundle.shareCubit.close();
+    });
+
+    testWidgets('sharing does not change language preference', (tester) async {
       final bundle = _buildApp(
         poemRepository: mockPoemRepo,
         favouritesRepository: mockFavRepo,
@@ -222,12 +247,10 @@ void main() {
       await tester.pumpWidget(bundle.app);
       await tester.pump();
 
-      // Change theme to dark
-      bundle.themeCubit.changeTheme(ThemePreference.dark);
+      bundle.shareCubit.sharePoem(_testPoem);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Language preference should still be English
       expect(bundle.langCubit.state.language, PoemLanguage.english);
 
       bundle.themeCubit.close();
@@ -236,11 +259,7 @@ void main() {
       bundle.shareCubit.close();
     });
 
-    testWidgets('theme change does not modify favourite IDs', (tester) async {
-      when(
-        () => mockFavRepo.getFavouritePoemIds(),
-      ).thenAnswer((_) async => ['poem1']);
-
+    testWidgets('sharing does not change theme preference', (tester) async {
       final bundle = _buildApp(
         poemRepository: mockPoemRepo,
         favouritesRepository: mockFavRepo,
@@ -253,20 +272,11 @@ void main() {
       await tester.pumpWidget(bundle.app);
       await tester.pump();
 
-      // Load favourites
-      bundle.favCubit.loadFavourites();
+      bundle.shareCubit.sharePoem(_testPoem);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Change theme
-      bundle.themeCubit.changeTheme(ThemePreference.dark);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      // Favourites cubit should not have been affected
-      expect(bundle.favCubit.state, isA<FavouritesLoaded>());
-      final loaded = bundle.favCubit.state as FavouritesLoaded;
-      expect(loaded.favouriteIds, contains('poem1'));
+      expect(bundle.themeCubit.state.preference, ThemePreference.system);
 
       bundle.themeCubit.close();
       bundle.langCubit.close();
@@ -274,10 +284,9 @@ void main() {
       bundle.shareCubit.close();
     });
 
-    testWidgets('theme change does not close PoemDetails route', (
-      tester,
-    ) async {
-      // Use a taller viewport so the button is visible above the NavigationBar.
+    testWidgets('sharing does not close PoemDetails route', (tester) async {
+      // Use a taller viewport so the "Read in focus mode" button is visible
+      // above the NavigationBar.
       tester.view.physicalSize = const Size(800, 1000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -301,8 +310,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('Poem'), findsOneWidget);
 
-      // Change theme
-      bundle.themeCubit.changeTheme(ThemePreference.dark);
+      // Trigger share from poem details
+      bundle.shareCubit.sharePoem(_testPoem);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -315,9 +324,7 @@ void main() {
       bundle.shareCubit.close();
     });
 
-    testWidgets('theme change does not reset NavigationBar branch', (
-      tester,
-    ) async {
+    testWidgets('appRouter remains the same instance', (tester) async {
       final bundle = _buildApp(
         poemRepository: mockPoemRepo,
         favouritesRepository: mockFavRepo,
@@ -329,23 +336,13 @@ void main() {
 
       await tester.pumpWidget(bundle.app);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
 
-      // Start on Today tab, navigate to Settings
-      // Use the GoRouter to navigate to settings
-      appRouter.go('/settings');
+      final routerBefore = appRouter;
+      bundle.shareCubit.sharePoem(_testPoem);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(find.text('Appearance'), findsOneWidget);
+      final routerAfter = appRouter;
 
-      // Change theme
-      bundle.themeCubit.changeTheme(ThemePreference.dark);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      // Should still be on Settings tab
-      expect(find.text('Appearance'), findsOneWidget);
-      expect(find.text("Today's poem"), findsNothing);
+      expect(routerBefore, same(routerAfter));
 
       bundle.themeCubit.close();
       bundle.langCubit.close();

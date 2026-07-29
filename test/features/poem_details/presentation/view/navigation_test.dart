@@ -21,6 +21,9 @@ import 'package:daily_stanza/features/settings/presentation/cubit/language_prefe
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_state.dart';
+import 'package:daily_stanza/features/share_poem/domain/model/poem_share_result.dart';
+import 'package:daily_stanza/features/share_poem/domain/service/poem_share_service.dart';
+import 'package:daily_stanza/features/share_poem/presentation/cubit/poem_share_cubit.dart';
 
 class MockFavouritesCubit extends MockBloc<FavouritesCubit, FavouritesState>
     implements FavouritesCubit {}
@@ -35,6 +38,8 @@ class MockThemePreferencesCubit
 
 class MockPoemRepository extends Mock implements PoemRepository {}
 
+class MockPoemShareService extends Mock implements PoemShareService {}
+
 const _testPoem = Poem(
   id: 'poem1',
   title: 'The Tyger',
@@ -47,7 +52,22 @@ const _testPoem = Poem(
   rightsStatus: 'public_domain',
 );
 
+PoemShareCubit _createDefaultShareCubit() {
+  final mockService = MockPoemShareService();
+  when(
+    () => mockService.shareText(
+      text: any(named: 'text'),
+      subject: any(named: 'subject'),
+      sharePositionOrigin: any(named: 'sharePositionOrigin'),
+    ),
+  ).thenAnswer((_) async => PoemShareResult.completed);
+  return PoemShareCubit(shareService: mockService);
+}
+
 void main() {
+  setUpAll(() {
+    registerFallbackValue(PoemShareResult.completed);
+  });
   group('FavouritePoemCard onOpen', () {
     testWidgets('onOpen is invoked when tapping the card content', (
       tester,
@@ -114,13 +134,16 @@ void main() {
         MaterialApp(
           home: BlocProvider<FavouritesCubit>.value(
             value: mockFavCubit,
-            child: Scaffold(
-              body: DailyPoemContent(
-                poem: _testPoem,
-                isFromCache: false,
-                formattedDate: 'July 29, 2026',
-                onReadFocusMode: () =>
-                    navigatedPath = '/today/poem/${_testPoem.id}',
+            child: BlocProvider<PoemShareCubit>(
+              create: (_) => _createDefaultShareCubit(),
+              child: Scaffold(
+                body: DailyPoemContent(
+                  poem: _testPoem,
+                  isFromCache: false,
+                  formattedDate: 'July 29, 2026',
+                  onReadFocusMode: () =>
+                      navigatedPath = '/today/poem/${_testPoem.id}',
+                ),
               ),
             ),
           ),
@@ -171,8 +194,13 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: BlocProvider<FavouritesCubit>.value(
-            value: mockFavCubit,
+          home: MultiBlocProvider(
+            providers: [
+              BlocProvider<FavouritesCubit>.value(value: mockFavCubit),
+              BlocProvider<PoemShareCubit>(
+                create: (_) => _createDefaultShareCubit(),
+              ),
+            ],
             child: BlocProvider<PoemDetailsCubit>(
               create: (_) => PoemDetailsCubit(repository: MockPoemRepository()),
               child: const PoemDetailsView(),
@@ -231,6 +259,9 @@ void main() {
               BlocProvider<FavouritesCubit>.value(value: mockFavCubit),
               BlocProvider<LanguagePreferencesCubit>.value(value: langCubit),
               BlocProvider<ThemePreferencesCubit>.value(value: themeCubit),
+              BlocProvider<PoemShareCubit>(
+                create: (_) => _createDefaultShareCubit(),
+              ),
             ],
             child: MaterialApp.router(routerConfig: router),
           ),
@@ -471,6 +502,8 @@ void main() {
       expect(find.text('Read in focus mode'), findsOneWidget);
 
       // Tap "Read in focus mode" to trigger context.push('/today/poem/poem1')
+      await tester.ensureVisible(find.text('Read in focus mode'));
+      await tester.pump();
       await tester.tap(find.text('Read in focus mode'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
@@ -540,6 +573,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       // Tap "Read in focus mode" to open poem details
+      await tester.ensureVisible(find.text('Read in focus mode'));
+      await tester.pump();
       await tester.tap(find.text('Read in focus mode'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));

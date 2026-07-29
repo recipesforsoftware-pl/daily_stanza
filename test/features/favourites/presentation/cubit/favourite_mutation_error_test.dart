@@ -12,6 +12,9 @@ import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_s
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
+import 'package:daily_stanza/features/share_poem/domain/model/poem_share_result.dart';
+import 'package:daily_stanza/features/share_poem/domain/service/poem_share_service.dart';
+import 'package:daily_stanza/features/share_poem/presentation/cubit/poem_share_cubit.dart';
 
 class _MockPoemRepository extends Mock implements PoemRepository {}
 
@@ -21,6 +24,8 @@ class _MockFavouritesCubit extends MockBloc<FavouritesCubit, FavouritesState>
 class _MockLanguagePreferencesCubit
     extends MockBloc<LanguagePreferencesCubit, LanguagePreferencesState>
     implements LanguagePreferencesCubit {}
+
+class _MockPoemShareService extends Mock implements PoemShareService {}
 
 const _testPoem = Poem(
   id: 'poem1',
@@ -51,12 +56,24 @@ Widget _buildApp({
   LanguagePreferencesCubit? languagePreferencesCubit,
 }) {
   final langCubit = languagePreferencesCubit ?? _createDefaultLangCubit();
+  final shareService = _MockPoemShareService();
+  when(
+    () => shareService.shareText(
+      text: any(named: 'text'),
+      subject: any(named: 'subject'),
+      sharePositionOrigin: any(named: 'sharePositionOrigin'),
+    ),
+  ).thenAnswer((_) async => PoemShareResult.completed);
+
   return RepositoryProvider<PoemRepository>.value(
     value: poemRepository,
     child: MultiBlocProvider(
       providers: [
         BlocProvider<FavouritesCubit>.value(value: favouritesCubit),
         BlocProvider<LanguagePreferencesCubit>.value(value: langCubit),
+        BlocProvider<PoemShareCubit>(
+          create: (_) => PoemShareCubit(shareService: shareService),
+        ),
       ],
       child: MultiBlocListener(
         listeners: [
@@ -124,6 +141,10 @@ void main() {
   late _MockPoemRepository mockRepo;
   late _MockFavouritesCubit mockFavCubit;
   late GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
+
+  setUpAll(() {
+    registerFallbackValue(PoemShareResult.completed);
+  });
 
   setUp(() {
     mockRepo = _MockPoemRepository();

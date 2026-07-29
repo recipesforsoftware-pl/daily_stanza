@@ -9,12 +9,17 @@ import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_s
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_cubit.dart';
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_state.dart';
 import 'package:daily_stanza/features/poem_details/presentation/view/poem_details_view.dart';
+import 'package:daily_stanza/features/share_poem/domain/model/poem_share_result.dart';
+import 'package:daily_stanza/features/share_poem/domain/service/poem_share_service.dart';
+import 'package:daily_stanza/features/share_poem/presentation/cubit/poem_share_cubit.dart';
 
 class MockPoemDetailsCubit extends MockBloc<PoemDetailsCubit, PoemDetailsState>
     implements PoemDetailsCubit {}
 
 class MockFavouritesCubit extends MockBloc<FavouritesCubit, FavouritesState>
     implements FavouritesCubit {}
+
+class MockPoemShareService extends Mock implements PoemShareService {}
 
 const _testPoem = Poem(
   id: 'poem1',
@@ -53,15 +58,18 @@ const _longPoem = Poem(
 Widget _buildApp({
   required MockPoemDetailsCubit poemDetailsCubit,
   MockFavouritesCubit? favouritesCubit,
+  PoemShareCubit? shareCubit,
 }) {
   final favCubit = favouritesCubit ?? _createDefaultFavCubit();
+  final shareCubitValue = shareCubit ?? _createDefaultShareCubit();
   return MaterialApp(
-    home: BlocProvider<FavouritesCubit>.value(
-      value: favCubit,
-      child: BlocProvider<PoemDetailsCubit>.value(
-        value: poemDetailsCubit,
-        child: const PoemDetailsView(),
-      ),
+    home: MultiBlocProvider(
+      providers: [
+        BlocProvider<FavouritesCubit>.value(value: favCubit),
+        BlocProvider<PoemDetailsCubit>.value(value: poemDetailsCubit),
+        BlocProvider<PoemShareCubit>.value(value: shareCubitValue),
+      ],
+      child: const PoemDetailsView(),
     ),
   );
 }
@@ -74,6 +82,18 @@ MockFavouritesCubit _createDefaultFavCubit() {
     initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
   );
   return cubit;
+}
+
+PoemShareCubit _createDefaultShareCubit() {
+  final mockService = MockPoemShareService();
+  when(
+    () => mockService.shareText(
+      text: any(named: 'text'),
+      subject: any(named: 'subject'),
+      sharePositionOrigin: any(named: 'sharePositionOrigin'),
+    ),
+  ).thenAnswer((_) async => PoemShareResult.completed);
+  return PoemShareCubit(shareService: mockService);
 }
 
 void main() {

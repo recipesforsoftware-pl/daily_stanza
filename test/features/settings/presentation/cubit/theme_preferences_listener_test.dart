@@ -17,6 +17,9 @@ import 'package:daily_stanza/features/settings/presentation/cubit/language_prefe
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_state.dart';
+import 'package:daily_stanza/features/share_poem/domain/model/poem_share_result.dart';
+import 'package:daily_stanza/features/share_poem/domain/service/poem_share_service.dart';
+import 'package:daily_stanza/features/share_poem/presentation/cubit/poem_share_cubit.dart';
 
 class _MockPoemRepository extends Mock implements PoemRepository {}
 
@@ -28,6 +31,8 @@ class _MockThemePreferencesRepository extends Mock
 
 class _MockFavouritesCubit extends MockBloc<FavouritesCubit, FavouritesState>
     implements FavouritesCubit {}
+
+class _MockPoemShareService extends Mock implements PoemShareService {}
 
 const _testPoem = Poem(
   id: 'poem1',
@@ -62,6 +67,15 @@ Widget _buildApp({
   required ThemePreferencesCubit themePreferencesCubit,
   required GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey,
 }) {
+  final shareService = _MockPoemShareService();
+  when(
+    () => shareService.shareText(
+      text: any(named: 'text'),
+      subject: any(named: 'subject'),
+      sharePositionOrigin: any(named: 'sharePositionOrigin'),
+    ),
+  ).thenAnswer((_) async => PoemShareResult.completed);
+
   return RepositoryProvider<PoemRepository>.value(
     value: poemRepository,
     child: MultiBlocProvider(
@@ -71,6 +85,9 @@ Widget _buildApp({
           value: languagePreferencesCubit,
         ),
         BlocProvider<ThemePreferencesCubit>.value(value: themePreferencesCubit),
+        BlocProvider<PoemShareCubit>(
+          create: (_) => PoemShareCubit(shareService: shareService),
+        ),
       ],
       child: MultiBlocListener(
         listeners: [
@@ -146,6 +163,7 @@ void main() {
     registerFallbackValue(ThemePreference.system);
     registerFallbackValue(ThemePreference.light);
     registerFallbackValue(ThemePreference.dark);
+    registerFallbackValue(PoemShareResult.completed);
   });
 
   setUp(() {
