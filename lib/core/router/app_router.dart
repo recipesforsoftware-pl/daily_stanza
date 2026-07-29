@@ -6,14 +6,25 @@ import 'package:daily_stanza/features/daily_poem/domain/repository/poem_reposito
 import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_bloc.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/view/today_view.dart';
 import 'package:daily_stanza/features/favourites/presentation/view/favourites_view.dart';
+import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_cubit.dart';
+import 'package:daily_stanza/features/poem_details/presentation/view/poem_details_view.dart';
 import 'package:daily_stanza/features/settings/settings_view.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-final appRouter = GoRouter(
-  navigatorKey: _rootNavigatorKey,
-  initialLocation: '/today',
-  routes: [
+Widget _poemDetailsBuilder(BuildContext context, GoRouterState state) {
+  final id = state.pathParameters['id'] ?? '';
+  return BlocProvider(
+    create: (context) =>
+        PoemDetailsCubit(repository: context.read<PoemRepository>())
+          ..loadPoem(id),
+    child: const PoemDetailsView(),
+  );
+}
+
+List<RouteBase> _buildRoutes({GlobalKey<NavigatorState>? rootNavigatorKey}) {
+  final rootKey = rootNavigatorKey ?? _rootNavigatorKey;
+  return [
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return ScaffoldWithNavBar(navigationShell: navigationShell);
@@ -31,7 +42,8 @@ final appRouter = GoRouter(
               routes: [
                 GoRoute(
                   path: 'poem/:id',
-                  builder: (context, state) => const _PoemPlaceholder(),
+                  parentNavigatorKey: rootKey,
+                  builder: _poemDetailsBuilder,
                 ),
               ],
             ),
@@ -45,7 +57,8 @@ final appRouter = GoRouter(
               routes: [
                 GoRoute(
                   path: 'poem/:id',
-                  builder: (context, state) => const _PoemPlaceholder(),
+                  parentNavigatorKey: rootKey,
+                  builder: _poemDetailsBuilder,
                 ),
               ],
             ),
@@ -61,14 +74,23 @@ final appRouter = GoRouter(
         ),
       ],
     ),
-  ],
+  ];
+}
+
+final appRouter = GoRouter(
+  navigatorKey: _rootNavigatorKey,
+  initialLocation: '/today',
+  routes: _buildRoutes(),
 );
 
-class _PoemPlaceholder extends StatelessWidget {
-  const _PoemPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Poem view — Phase 3')));
-  }
+/// Creates a fresh, isolated GoRouter instance with the same route
+/// configuration.  Each call returns a fully independent router so
+/// tests do not share navigation state.
+GoRouter createRouter() {
+  final key = GlobalKey<NavigatorState>();
+  return GoRouter(
+    navigatorKey: key,
+    initialLocation: '/today',
+    routes: _buildRoutes(rootNavigatorKey: key),
+  );
 }

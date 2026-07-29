@@ -9,12 +9,14 @@ class FavouritePoemCard extends StatelessWidget {
     required this.poem,
     required this.isRemoving,
     required this.onRemove,
+    this.onOpen,
     super.key,
   });
 
   final Poem poem;
   final bool isRemoving;
   final VoidCallback onRemove;
+  final VoidCallback? onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -27,72 +29,79 @@ class FavouritePoemCard extends StatelessWidget {
           borderRadius: AppSpacing.borderRadiusMd,
           side: BorderSide(color: AppColors.lightBorder),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          poem.title,
-                          style: AppTextStyles.poemTitle.copyWith(
-                            color: AppColors.lightFg,
-                            fontSize: 18,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+        child: InkWell(
+          onTap: onOpen,
+          borderRadius: AppSpacing.borderRadiusMd,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        label: 'Open ${poem.title} by ${poem.author}',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              poem.title,
+                              style: AppTextStyles.poemTitle.copyWith(
+                                color: AppColors.lightFg,
+                                fontSize: 18,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              poem.author,
+                              style: AppTextStyles.poemAuthor.copyWith(
+                                color: AppColors.lightMuted,
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          poem.author,
-                          style: AppTextStyles.poemAuthor.copyWith(
-                            color: AppColors.lightMuted,
-                            fontSize: 14,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Semantics(
-                    label: 'Remove from favourites',
-                    child: IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 20),
-                      color: AppColors.lightMuted,
-                      onPressed: isRemoving ? null : onRemove,
-                      tooltip: 'Remove from favourites',
+                    const SizedBox(width: 8),
+                    Semantics(
+                      label: 'Remove from favourites',
+                      child: IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        color: AppColors.lightMuted,
+                        onPressed: isRemoving ? null : onRemove,
+                        tooltip: 'Remove from favourites',
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  _MetaChip(label: _languageLabel(poem.languageCode)),
-                  const SizedBox(width: 6),
-                  _MetaChip(label: _countryLabel(poem.countryCode)),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                poem.content,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.lightMuted,
-                  height: 1.5,
+                  ],
                 ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    _MetaChip(label: _languageLabel(poem.languageCode)),
+                    const SizedBox(width: 6),
+                    _MetaChip(label: _countryLabel(poem.countryCode)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  poem.content,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.lightMuted,
+                    height: 1.5,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),

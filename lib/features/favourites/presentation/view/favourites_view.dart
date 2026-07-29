@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:daily_stanza/core/theme/app_colors.dart';
 import 'package:daily_stanza/core/theme/app_text_styles.dart';
 import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
@@ -69,6 +70,7 @@ class _FavouritesList extends StatelessWidget {
           onRemove: () {
             context.read<FavouritesCubit>().removeFavourite(poem.id);
           },
+          onOpen: () => context.push('/favourites/poem/${poem.id}'),
         );
       },
     );

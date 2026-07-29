@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_bloc.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_event.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_state.dart';
@@ -59,6 +60,8 @@ class _TodayViewState extends State<TodayView> {
                         context.read<FavouritesCubit>().addFavourite(poem);
                       }
                     },
+                    onReadFocusMode: () =>
+                        context.push('/today/poem/${poem.id}'),
                   );
                 },
               ),

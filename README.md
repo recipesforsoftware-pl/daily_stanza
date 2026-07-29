@@ -20,9 +20,28 @@ The current version includes:
 - offline Firestore persistence
 - retry handling
 - responsive Flutter UI
-- BLoC and widget tests
+- local favourites persisted with SharedPreferences
+- poem details / focused reading view with scrollable content
+- favourites mutation error presented as single SnackBar via global listener
+- route-level error boundaries and failure states
+- full GoRouter integration with shell navigation
+- 180 automated tests (unit + widget)
 - Firestore Security Rules tests
 - GitHub Actions CI
+
+## Architecture
+
+```
+presentation (BLoC / Cubit)
+  → repositories (abstract interface)
+    → Firestore / SharedPreferences
+```
+
+Presentation layers depend on abstract repository interfaces only —
+Firestore and SharedPreferences are injected at the composition root.
+
+Favourites are local-only and persisted as poem ID lists through
+SharedPreferences.
 
 ## Local development
 

@@ -12,6 +12,7 @@ import 'package:daily_stanza/features/favourites/data/datasource/local_favourite
 import 'package:daily_stanza/features/favourites/data/repository/favourites_repository_impl.dart';
 import 'package:daily_stanza/features/favourites/domain/repository/favourites_repository.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
+import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,9 @@ void main() async {
   final favouritesRepository = FavouritesRepositoryImpl(
     dataSource: localDataSource,
   );
+
+  final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
   runApp(
     MultiRepositoryProvider(
       providers: [
@@ -62,7 +66,30 @@ void main() async {
             )..loadFavourites(),
           ),
         ],
-        child: const App(),
+        child: BlocListener<FavouritesCubit, FavouritesState>(
+          listenWhen: (previous, current) {
+            final previousError = switch (previous) {
+              FavouritesLoaded(:final mutationError) => mutationError,
+              _ => null,
+            };
+            final currentError = switch (current) {
+              FavouritesLoaded(:final mutationError) => mutationError,
+              _ => null,
+            };
+            return currentError != null && currentError != previousError;
+          },
+          listener: (context, state) {
+            final error = switch (state) {
+              FavouritesLoaded(:final mutationError) => mutationError,
+              _ => null,
+            };
+            if (error == null) return;
+            scaffoldMessengerKey.currentState
+              ?..hideCurrentSnackBar()
+              ..showSnackBar(SnackBar(content: Text(error)));
+          },
+          child: App(scaffoldMessengerKey: scaffoldMessengerKey),
+        ),
       ),
     ),
   );

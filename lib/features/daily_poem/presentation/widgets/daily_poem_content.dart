@@ -13,6 +13,7 @@ class DailyPoemContent extends StatelessWidget {
     this.isFavourite = false,
     this.isFavouriteUpdating = false,
     this.onFavouriteToggle,
+    this.onReadFocusMode,
     super.key,
   });
 
@@ -22,6 +23,7 @@ class DailyPoemContent extends StatelessWidget {
   final bool isFavourite;
   final bool isFavouriteUpdating;
   final VoidCallback? onFavouriteToggle;
+  final VoidCallback? onReadFocusMode;
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +90,26 @@ class DailyPoemContent extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (onReadFocusMode != null) ...[
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Semantics(
+                      label: 'Read in focus mode',
+                      child: TextButton.icon(
+                        onPressed: onReadFocusMode,
+                        icon: const Icon(Icons.open_in_full, size: 18),
+                        label: const Text('Read in focus mode'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.lightMuted,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
               ],
             ),
