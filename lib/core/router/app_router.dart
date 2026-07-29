@@ -8,7 +8,7 @@ import 'package:daily_stanza/features/daily_poem/presentation/view/today_view.da
 import 'package:daily_stanza/features/favourites/presentation/view/favourites_view.dart';
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_cubit.dart';
 import 'package:daily_stanza/features/poem_details/presentation/view/poem_details_view.dart';
-import 'package:daily_stanza/features/settings/settings_view.dart';
+import 'package:daily_stanza/features/settings/presentation/view/settings_view.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 

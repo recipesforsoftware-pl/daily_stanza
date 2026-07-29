@@ -8,15 +8,22 @@ import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
 import 'package:daily_stanza/features/daily_poem/domain/repository/poem_repository.dart';
 import 'package:daily_stanza/features/favourites/domain/repository/favourites_repository.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
+import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
+import 'package:daily_stanza/features/settings/domain/repository/language_preferences_repository.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 
 class MockPoemRepository extends Mock implements PoemRepository {}
 
 class MockFavouritesRepository extends Mock implements FavouritesRepository {}
 
+class MockLanguagePreferencesRepository extends Mock
+    implements LanguagePreferencesRepository {}
+
 void main() {
   testWidgets('App renders without error', (tester) async {
     final mockPoemRepo = MockPoemRepository();
     final mockFavRepo = MockFavouritesRepository();
+    final mockLangRepo = MockLanguagePreferencesRepository();
     when(
       () => mockPoemRepo.getDailyPoem(
         date: any(named: 'date'),
@@ -39,12 +46,18 @@ void main() {
       ),
     );
     when(() => mockFavRepo.getFavouritePoemIds()).thenAnswer((_) async => []);
+    when(
+      () => mockLangRepo.getPreferredLanguage(),
+    ).thenAnswer((_) async => PoemLanguage.english);
 
     await tester.pumpWidget(
       MultiRepositoryProvider(
         providers: [
           RepositoryProvider<PoemRepository>.value(value: mockPoemRepo),
           RepositoryProvider<FavouritesRepository>.value(value: mockFavRepo),
+          RepositoryProvider<LanguagePreferencesRepository>.value(
+            value: mockLangRepo,
+          ),
         ],
         child: MultiBlocProvider(
           providers: [
@@ -53,6 +66,12 @@ void main() {
                 favouritesRepository: mockFavRepo,
                 poemRepository: mockPoemRepo,
               )..loadFavourites(),
+            ),
+            BlocProvider<LanguagePreferencesCubit>(
+              create: (_) => LanguagePreferencesCubit(
+                repository: mockLangRepo,
+                initialLanguage: PoemLanguage.english,
+              ),
             ),
           ],
           child: App(scaffoldMessengerKey: GlobalKey<ScaffoldMessengerState>()),

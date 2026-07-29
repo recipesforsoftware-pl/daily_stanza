@@ -11,11 +11,20 @@ import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_st
 import 'package:daily_stanza/features/daily_poem/presentation/view/today_view.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_state.dart';
+import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
 
 class MockPoemRepository extends Mock implements PoemRepository {}
 
 class MockFavouritesCubit extends MockBloc<FavouritesCubit, FavouritesState>
     implements FavouritesCubit {}
+
+class MockLanguagePreferencesCubit
+    extends MockBloc<LanguagePreferencesCubit, LanguagePreferencesState>
+    implements LanguagePreferencesCubit {}
+
+class MockDailyPoemBloc extends Mock implements DailyPoemBloc {}
 
 const _testPoem = Poem(
   id: 'poem1',
@@ -51,20 +60,21 @@ const _longPoem = Poem(
   rightsStatus: 'public_domain',
 );
 
-class MockDailyPoemBloc extends Mock implements DailyPoemBloc {}
-
 Widget _buildApp({
   required MockDailyPoemBloc dailyPoemBloc,
   MockFavouritesCubit? favouritesCubit,
+  MockLanguagePreferencesCubit? languageCubit,
 }) {
   final favCubit = favouritesCubit ?? _createDefaultFavCubit();
+  final langCubit = languageCubit ?? _createDefaultLangCubit();
   return MaterialApp(
-    home: BlocProvider<FavouritesCubit>.value(
-      value: favCubit,
-      child: BlocProvider<DailyPoemBloc>.value(
-        value: dailyPoemBloc,
-        child: const TodayView(),
-      ),
+    home: MultiBlocProvider(
+      providers: [
+        BlocProvider<FavouritesCubit>.value(value: favCubit),
+        BlocProvider<LanguagePreferencesCubit>.value(value: langCubit),
+        BlocProvider<DailyPoemBloc>.value(value: dailyPoemBloc),
+      ],
+      child: const TodayView(),
     ),
   );
 }
@@ -79,6 +89,18 @@ MockFavouritesCubit _createDefaultFavCubit() {
   return cubit;
 }
 
+MockLanguagePreferencesCubit _createDefaultLangCubit() {
+  final cubit = MockLanguagePreferencesCubit();
+  whenListen(
+    cubit,
+    const Stream<LanguagePreferencesState>.empty(),
+    initialState: const LanguagePreferencesState(
+      language: PoemLanguage.english,
+    ),
+  );
+  return cubit;
+}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(const DailyPoemRetryRequested());
@@ -86,6 +108,8 @@ void main() {
       DailyPoemRequested(date: DateTime(2026, 7, 28), languageCode: 'en'),
     );
     registerFallbackValue(_testPoem);
+    registerFallbackValue(PoemLanguage.english);
+    registerFallbackValue(PoemLanguage.polish);
   });
 
   group('TodayView', () {

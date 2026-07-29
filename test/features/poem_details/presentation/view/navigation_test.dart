@@ -15,9 +15,16 @@ import 'package:daily_stanza/features/favourites/presentation/widgets/favourite_
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_cubit.dart';
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_state.dart';
 import 'package:daily_stanza/features/poem_details/presentation/view/poem_details_view.dart';
+import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
 
 class MockFavouritesCubit extends MockBloc<FavouritesCubit, FavouritesState>
     implements FavouritesCubit {}
+
+class MockLanguagePreferencesCubit
+    extends MockBloc<LanguagePreferencesCubit, LanguagePreferencesState>
+    implements LanguagePreferencesCubit {}
 
 class MockPoemRepository extends Mock implements PoemRepository {}
 
@@ -175,17 +182,34 @@ void main() {
 
   group('GoRouter integration', () {
     /// Returns a pair (router, widget) so each test has an isolated router.
+    MockLanguagePreferencesCubit createDefaultLangCubit() {
+      final cubit = MockLanguagePreferencesCubit();
+      whenListen(
+        cubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      return cubit;
+    }
+
     ({GoRouter router, Widget widget}) buildRouterApp({
       required MockPoemRepository mockRepo,
       required MockFavouritesCubit mockFavCubit,
+      MockLanguagePreferencesCubit? mockLangCubit,
     }) {
       final router = createRouter();
+      final langCubit = mockLangCubit ?? createDefaultLangCubit();
       return (
         router: router,
         widget: RepositoryProvider<PoemRepository>.value(
           value: mockRepo,
-          child: BlocProvider<FavouritesCubit>.value(
-            value: mockFavCubit,
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<FavouritesCubit>.value(value: mockFavCubit),
+              BlocProvider<LanguagePreferencesCubit>.value(value: langCubit),
+            ],
             child: MaterialApp.router(routerConfig: router),
           ),
         ),

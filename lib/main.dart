@@ -13,6 +13,12 @@ import 'package:daily_stanza/features/favourites/data/repository/favourites_repo
 import 'package:daily_stanza/features/favourites/domain/repository/favourites_repository.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_state.dart';
+import 'package:daily_stanza/features/settings/data/datasource/local_language_preferences_data_source.dart';
+import 'package:daily_stanza/features/settings/data/repository/language_preferences_repository_impl.dart';
+import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
+import 'package:daily_stanza/features/settings/domain/repository/language_preferences_repository.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +53,20 @@ void main() async {
     dataSource: localDataSource,
   );
 
+  final languagePreferencesDataSource = LocalLanguagePreferencesDataSource(
+    sharedPreferences: sharedPreferences,
+  );
+  final languagePreferencesRepository = LanguagePreferencesRepositoryImpl(
+    dataSource: languagePreferencesDataSource,
+  );
+  PoemLanguage initialLanguage;
+  try {
+    initialLanguage = await languagePreferencesRepository
+        .getPreferredLanguage();
+  } catch (_) {
+    initialLanguage = PoemLanguage.english;
+  }
+
   final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   runApp(
@@ -55,6 +75,9 @@ void main() async {
         RepositoryProvider<PoemRepository>.value(value: poemRepository),
         RepositoryProvider<FavouritesRepository>.value(
           value: favouritesRepository,
+        ),
+        RepositoryProvider<LanguagePreferencesRepository>.value(
+          value: languagePreferencesRepository,
         ),
       ],
       child: MultiBlocProvider(
@@ -65,29 +88,52 @@ void main() async {
               poemRepository: poemRepository,
             )..loadFavourites(),
           ),
+          BlocProvider<LanguagePreferencesCubit>(
+            create: (_) => LanguagePreferencesCubit(
+              repository: languagePreferencesRepository,
+              initialLanguage: initialLanguage,
+            ),
+          ),
         ],
-        child: BlocListener<FavouritesCubit, FavouritesState>(
-          listenWhen: (previous, current) {
-            final previousError = switch (previous) {
-              FavouritesLoaded(:final mutationError) => mutationError,
-              _ => null,
-            };
-            final currentError = switch (current) {
-              FavouritesLoaded(:final mutationError) => mutationError,
-              _ => null,
-            };
-            return currentError != null && currentError != previousError;
-          },
-          listener: (context, state) {
-            final error = switch (state) {
-              FavouritesLoaded(:final mutationError) => mutationError,
-              _ => null,
-            };
-            if (error == null) return;
-            scaffoldMessengerKey.currentState
-              ?..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(content: Text(error)));
-          },
+        child: MultiBlocListener(
+          listeners: [
+            BlocListener<FavouritesCubit, FavouritesState>(
+              listenWhen: (previous, current) {
+                final previousError = switch (previous) {
+                  FavouritesLoaded(:final mutationError) => mutationError,
+                  _ => null,
+                };
+                final currentError = switch (current) {
+                  FavouritesLoaded(:final mutationError) => mutationError,
+                  _ => null,
+                };
+                return currentError != null && currentError != previousError;
+              },
+              listener: (context, state) {
+                final error = switch (state) {
+                  FavouritesLoaded(:final mutationError) => mutationError,
+                  _ => null,
+                };
+                if (error == null) return;
+                scaffoldMessengerKey.currentState
+                  ?..hideCurrentSnackBar()
+                  ..showSnackBar(SnackBar(content: Text(error)));
+              },
+            ),
+            BlocListener<LanguagePreferencesCubit, LanguagePreferencesState>(
+              listenWhen: (previous, current) {
+                return current.mutationError != null &&
+                    current.mutationError != previous.mutationError;
+              },
+              listener: (context, state) {
+                final error = state.mutationError;
+                if (error == null) return;
+                scaffoldMessengerKey.currentState
+                  ?..hideCurrentSnackBar()
+                  ..showSnackBar(SnackBar(content: Text(error)));
+              },
+            ),
+          ],
           child: App(scaffoldMessengerKey: scaffoldMessengerKey),
         ),
       ),

@@ -18,6 +18,9 @@ The current version includes:
 - daily poem delivery from Firestore
 - loading, missing, cached and failure states
 - offline Firestore persistence
+- local English and Polish daily-poem preference
+- language selection persisted on-device with SharedPreferences
+- functional Settings screen
 - retry handling
 - responsive Flutter UI
 - local favourites persisted with SharedPreferences
@@ -25,7 +28,7 @@ The current version includes:
 - favourites mutation error presented as single SnackBar via global listener
 - route-level error boundaries and failure states
 - full GoRouter integration with shell navigation
-- 180 automated tests (unit + widget)
+- 234 automated tests (unit + widget)
 - Firestore Security Rules tests
 - GitHub Actions CI
 
