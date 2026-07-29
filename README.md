@@ -70,13 +70,13 @@ flutter run
 - Android application ID: `pl.recipesforsoftware.dailystanza`
 - iOS bundle identifier: `pl.recipesforsoftware.dailystanza`
 
-Generated Firebase client configuration files
+Firebase client configuration
 (`lib/firebase_options.dart`, `android/app/google-services.json`,
-`ios/Runner/GoogleService-Info.plist`) are intentionally tracked because this
-repository represents the official Daily Stanza application.
+`ios/Runner/GoogleService-Info.plist`) is intentionally excluded from this
+public repository — see [Local Firebase client configuration](#local-firebase-client-configuration).
 
-Service-account credentials, private keys and Firebase login tokens must never
-be committed.
+Service-account credentials, private keys, Firebase login tokens, App Check
+debug tokens and signing credentials must never be committed.
 
 ## Local Firestore Emulator
 
@@ -153,3 +153,40 @@ performed manually through the Firebase Console or a separate, authenticated
 admin process.
 
 Do not deploy from CI or commit administrative credentials.
+
+## Local Firebase client configuration
+
+Firebase client configuration is intentionally excluded from this public
+repository.
+
+Authorized maintainers store the required files outside the repository in:
+
+```sh
+~/.config/daily_stanza/firebase/
+```
+
+Required filenames:
+
+- `firebase_options.dart`
+- `google-services.json`
+- `GoogleService-Info.plist`
+
+Restore them after a fresh clone with:
+
+```sh
+./tool/setup_firebase_config.sh
+```
+
+CI restores the same files from encrypted GitHub Actions Secrets.
+
+Never commit:
+
+- Firebase client configuration
+- service-account credentials
+- private keys
+- Firebase CLI tokens
+- App Check debug tokens
+- signing credentials
+
+A fresh clone cannot `flutter analyze` or build the production composition
+root until local Firebase configuration is restored.

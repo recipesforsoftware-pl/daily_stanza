@@ -42,3 +42,8 @@ firebase/node_modules/
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+
+# Firebase client configuration — local and CI only
+lib/firebase_options.dart
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
