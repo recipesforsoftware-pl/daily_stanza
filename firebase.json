@@ -2,5 +2,33 @@
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "daily-stanza-prod-ks",
+          "appId": "1:288491005958:android:b10b2d54b2eeba878f3b87",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "daily-stanza-prod-ks",
+          "appId": "1:288491005958:ios:f297a440dc8c53748f3b87",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "daily-stanza-prod-ks",
+          "configurations": {
+            "android": "1:288491005958:android:b10b2d54b2eeba878f3b87",
+            "ios": "1:288491005958:ios:f297a440dc8c53748f3b87"
+          }
+        }
+      }
+    }
   }
 }

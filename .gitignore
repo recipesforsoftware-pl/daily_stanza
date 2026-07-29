@@ -30,6 +30,7 @@ ios/Flutter/ephemeral/
 macos/Pods/
 macos/.symlinks/
 macos/Flutter/ephemeral/
+ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Firebase secrets
 **/service-account*.json

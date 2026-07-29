@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "YOUR_FIREBASE_PROJECT_ID"
+    "production": "daily-stanza-prod-ks",
+    "emulator": "demo-daily-stanza"
   }
 }

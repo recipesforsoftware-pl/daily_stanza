@@ -1,10 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_stanza/app.dart';
+import 'package:daily_stanza/core/config/app_environment.dart';
+import 'package:daily_stanza/core/firebase/firebase_bootstrap.dart';
 import 'package:daily_stanza/features/daily_poem/data/datasource/firestore_poem_data_source.dart';
 import 'package:daily_stanza/features/daily_poem/data/repository/poem_repository_impl.dart';
 import 'package:daily_stanza/features/daily_poem/domain/repository/poem_repository.dart';
@@ -30,28 +29,11 @@ import 'package:daily_stanza/features/share_poem/data/service/share_plus_poem_sh
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: 'demo-key',
-      appId: '1:000000000000:web:0000000000000000',
-      messagingSenderId: '000000000000',
-      projectId: 'demo-daily-stanza',
-    ),
-  );
-
-  if (kDebugMode) {
-    final host = defaultTargetPlatform == TargetPlatform.android
-        ? '10.0.2.2:8080'
-        : 'localhost:8080';
-    FirebaseFirestore.instance.settings = Settings(
-      host: host,
-      sslEnabled: false,
-      persistenceEnabled: true,
-    );
-  }
+  final environment = AppEnvironment.fromDartDefines();
+  final firestore = await FirebaseBootstrap.initialize(environment);
 
   final sharedPreferences = await SharedPreferences.getInstance();
-  final dataSource = FirestorePoemDataSource();
+  final dataSource = FirestorePoemDataSource(firestore: firestore);
   final poemRepository = PoemRepositoryImpl(dataSource: dataSource);
   final localDataSource = LocalFavouritesDataSource(
     sharedPreferences: sharedPreferences,

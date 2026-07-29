@@ -38,6 +38,9 @@ jobs:
       - name: Run tests
         run: flutter test --no-pub
 
+      - name: Build Android debug APK
+        run: flutter build apk --debug --no-pub
+
   firestore-rules:
     runs-on: ubuntu-latest
 
