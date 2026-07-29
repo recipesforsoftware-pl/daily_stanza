@@ -5,6 +5,8 @@ import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_ev
 import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_state.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/widgets/daily_poem_content.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/widgets/daily_poem_status_view.dart';
+import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
+import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_state.dart';
 
 class TodayView extends StatefulWidget {
   const TodayView({super.key});
@@ -34,10 +36,31 @@ class _TodayViewState extends State<TodayView> {
               subtitle: 'A calm moment while we look.',
             ),
             DailyPoemLoaded(:final poem, :final isFromCache) =>
-              DailyPoemContent(
-                poem: poem,
-                isFromCache: isFromCache,
-                formattedDate: _formatDate(DateTime.now()),
+              BlocBuilder<FavouritesCubit, FavouritesState>(
+                builder: (context, favState) {
+                  final isFav =
+                      favState is FavouritesLoaded &&
+                      favState.isFavourite(poem.id);
+                  final isUpdating =
+                      favState is FavouritesLoaded &&
+                      favState.updatingPoemIds.contains(poem.id);
+                  return DailyPoemContent(
+                    poem: poem,
+                    isFromCache: isFromCache,
+                    formattedDate: _formatDate(DateTime.now()),
+                    isFavourite: isFav,
+                    isFavouriteUpdating: isUpdating,
+                    onFavouriteToggle: () {
+                      if (isFav) {
+                        context.read<FavouritesCubit>().removeFavourite(
+                          poem.id,
+                        );
+                      } else {
+                        context.read<FavouritesCubit>().addFavourite(poem);
+                      }
+                    },
+                  );
+                },
               ),
             DailyPoemMissing() => DailyPoemStatusView(
               title: "Today's poem is not available yet",

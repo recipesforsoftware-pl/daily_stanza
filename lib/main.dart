@@ -3,10 +3,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_stanza/app.dart';
 import 'package:daily_stanza/features/daily_poem/data/datasource/firestore_poem_data_source.dart';
 import 'package:daily_stanza/features/daily_poem/data/repository/poem_repository_impl.dart';
 import 'package:daily_stanza/features/daily_poem/domain/repository/poem_repository.dart';
+import 'package:daily_stanza/features/favourites/data/datasource/local_favourites_data_source.dart';
+import 'package:daily_stanza/features/favourites/data/repository/favourites_repository_impl.dart';
+import 'package:daily_stanza/features/favourites/domain/repository/favourites_repository.dart';
+import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,13 +36,34 @@ void main() async {
     );
   }
 
+  final sharedPreferences = await SharedPreferences.getInstance();
   final dataSource = FirestorePoemDataSource();
-  final repository = PoemRepositoryImpl(dataSource: dataSource);
-
+  final poemRepository = PoemRepositoryImpl(dataSource: dataSource);
+  final localDataSource = LocalFavouritesDataSource(
+    sharedPreferences: sharedPreferences,
+  );
+  final favouritesRepository = FavouritesRepositoryImpl(
+    dataSource: localDataSource,
+  );
   runApp(
-    RepositoryProvider<PoemRepository>.value(
-      value: repository,
-      child: const App(),
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<PoemRepository>.value(value: poemRepository),
+        RepositoryProvider<FavouritesRepository>.value(
+          value: favouritesRepository,
+        ),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<FavouritesCubit>(
+            create: (_) => FavouritesCubit(
+              favouritesRepository: favouritesRepository,
+              poemRepository: poemRepository,
+            )..loadFavourites(),
+          ),
+        ],
+        child: const App(),
+      ),
     ),
   );
 }

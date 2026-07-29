@@ -9,8 +9,13 @@ import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_bl
 import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_event.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_state.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/view/today_view.dart';
+import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
+import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_state.dart';
 
 class MockPoemRepository extends Mock implements PoemRepository {}
+
+class MockFavouritesCubit extends MockBloc<FavouritesCubit, FavouritesState>
+    implements FavouritesCubit {}
 
 const _testPoem = Poem(
   id: 'poem1',
@@ -48,12 +53,39 @@ const _longPoem = Poem(
 
 class MockDailyPoemBloc extends Mock implements DailyPoemBloc {}
 
+Widget _buildApp({
+  required MockDailyPoemBloc dailyPoemBloc,
+  MockFavouritesCubit? favouritesCubit,
+}) {
+  final favCubit = favouritesCubit ?? _createDefaultFavCubit();
+  return MaterialApp(
+    home: BlocProvider<FavouritesCubit>.value(
+      value: favCubit,
+      child: BlocProvider<DailyPoemBloc>.value(
+        value: dailyPoemBloc,
+        child: const TodayView(),
+      ),
+    ),
+  );
+}
+
+MockFavouritesCubit _createDefaultFavCubit() {
+  final cubit = MockFavouritesCubit();
+  whenListen(
+    cubit,
+    const Stream<FavouritesState>.empty(),
+    initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+  );
+  return cubit;
+}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(const DailyPoemRetryRequested());
     registerFallbackValue(
       DailyPoemRequested(date: DateTime(2026, 7, 28), languageCode: 'en'),
     );
+    registerFallbackValue(_testPoem);
   });
 
   group('TodayView', () {
@@ -67,14 +99,7 @@ void main() {
         initialState: const DailyPoemLoading(),
       );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
-      );
+      await tester.pumpWidget(_buildApp(dailyPoemBloc: bloc));
       await tester.pump();
 
       expect(find.byType(Image), findsOneWidget);
@@ -91,14 +116,15 @@ void main() {
           isFromCache: false,
         ),
       );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
       );
       await tester.pump();
 
@@ -115,14 +141,15 @@ void main() {
           isFromCache: false,
         ),
       );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
       );
       await tester.pump();
 
@@ -141,14 +168,15 @@ void main() {
           isFromCache: false,
         ),
       );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
       );
       await tester.pump();
 
@@ -174,14 +202,15 @@ void main() {
           isFromCache: false,
         ),
       );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
       );
       await tester.pump();
 
@@ -196,14 +225,15 @@ void main() {
         const Stream<DailyPoemState>.empty(),
         initialState: const DailyPoemLoaded(poem: _testPoem, isFromCache: true),
       );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
       );
       await tester.pump();
 
@@ -220,14 +250,15 @@ void main() {
           isFromCache: false,
         ),
       );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
       );
       await tester.pump();
 
@@ -242,14 +273,7 @@ void main() {
         initialState: const DailyPoemMissing(),
       );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
-      );
+      await tester.pumpWidget(_buildApp(dailyPoemBloc: bloc));
       await tester.pump();
 
       expect(find.text("Today's poem is not available yet"), findsOneWidget);
@@ -266,14 +290,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
-      );
+      await tester.pumpWidget(_buildApp(dailyPoemBloc: bloc));
       await tester.pump();
 
       expect(find.text("We couldn't load today's poem"), findsOneWidget);
@@ -292,14 +309,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
-      );
+      await tester.pumpWidget(_buildApp(dailyPoemBloc: bloc));
       await tester.pump();
 
       await tester.tap(find.text('Try again'));
@@ -317,14 +327,15 @@ void main() {
           isFromCache: false,
         ),
       );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider<DailyPoemBloc>.value(
-            value: bloc,
-            child: const TodayView(),
-          ),
-        ),
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
       );
       await tester.pump();
 
@@ -348,19 +359,221 @@ void main() {
             isFromCache: false,
           ),
         );
+        final favCubit = MockFavouritesCubit();
+        whenListen(
+          favCubit,
+          const Stream<FavouritesState>.empty(),
+          initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+        );
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: BlocProvider<DailyPoemBloc>.value(
-              value: bloc,
-              child: const TodayView(),
-            ),
-          ),
+          _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
         );
         await tester.pump();
 
         expect(tester.takeException(), isNull);
       },
     );
+
+    // --- Favourite integration tests ---
+
+    testWidgets('loaded non-favourite poem shows an outline heart', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.favorite_outline), findsOneWidget);
+    });
+
+    testWidgets('loaded favourite poem shows a filled heart', (tester) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(
+          poems: [_testPoem],
+          favouriteIds: {'poem1'},
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.favorite), findsOneWidget);
+    });
+
+    testWidgets('outline-heart action has semantic label "Add to favourites"', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      expect(find.byTooltip('Add to favourites'), findsOneWidget);
+    });
+
+    testWidgets(
+      'filled-heart action has semantic label "Remove from favourites"',
+      (tester) async {
+        final bloc = MockDailyPoemBloc();
+        whenListen(
+          bloc,
+          const Stream<DailyPoemState>.empty(),
+          initialState: const DailyPoemLoaded(
+            poem: _testPoem,
+            isFromCache: false,
+          ),
+        );
+        final favCubit = MockFavouritesCubit();
+        whenListen(
+          favCubit,
+          const Stream<FavouritesState>.empty(),
+          initialState: const FavouritesLoaded(
+            poems: [_testPoem],
+            favouriteIds: {'poem1'},
+          ),
+        );
+
+        await tester.pumpWidget(
+          _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+        );
+        await tester.pump();
+
+        expect(find.byTooltip('Remove from favourites'), findsOneWidget);
+      },
+    );
+
+    testWidgets('tapping add calls cubit.addFavourite', (tester) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+      when(() => favCubit.addFavourite(any())).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.favorite_outline));
+      verify(() => favCubit.addFavourite(_testPoem)).called(1);
+    });
+
+    testWidgets('tapping remove calls cubit.removeFavourite', (tester) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(
+          poems: [_testPoem],
+          favouriteIds: {'poem1'},
+        ),
+      );
+      when(() => favCubit.removeFavourite(any())).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.favorite));
+      verify(() => favCubit.removeFavourite('poem1')).called(1);
+    });
+
+    testWidgets('toggling a favourite does not hide the loaded poem', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      // Poem should still be visible.
+      expect(find.text('The Tyger'), findsOneWidget);
+      expect(find.text('William Blake'), findsOneWidget);
+    });
   });
 }

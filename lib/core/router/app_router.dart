@@ -5,7 +5,7 @@ import 'package:daily_stanza/core/widgets/scaffold_with_nav_bar.dart';
 import 'package:daily_stanza/features/daily_poem/domain/repository/poem_repository.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_bloc.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/view/today_view.dart';
-import 'package:daily_stanza/features/favourites/favourites_view.dart';
+import 'package:daily_stanza/features/favourites/presentation/view/favourites_view.dart';
 import 'package:daily_stanza/features/settings/settings_view.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();

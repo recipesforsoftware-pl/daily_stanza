@@ -5,14 +5,19 @@ import 'package:daily_stanza/app.dart';
 import 'package:daily_stanza/features/daily_poem/domain/model/daily_poem_result.dart';
 import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
 import 'package:daily_stanza/features/daily_poem/domain/repository/poem_repository.dart';
+import 'package:daily_stanza/features/favourites/domain/repository/favourites_repository.dart';
+import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
 
 class MockPoemRepository extends Mock implements PoemRepository {}
 
+class MockFavouritesRepository extends Mock implements FavouritesRepository {}
+
 void main() {
   testWidgets('App renders without error', (tester) async {
-    final mockRepo = MockPoemRepository();
+    final mockPoemRepo = MockPoemRepository();
+    final mockFavRepo = MockFavouritesRepository();
     when(
-      () => mockRepo.getDailyPoem(
+      () => mockPoemRepo.getDailyPoem(
         date: any(named: 'date'),
         languageCode: any(named: 'languageCode'),
       ),
@@ -32,11 +37,25 @@ void main() {
         isFromCache: false,
       ),
     );
+    when(() => mockFavRepo.getFavouritePoemIds()).thenAnswer((_) async => []);
 
     await tester.pumpWidget(
-      RepositoryProvider<PoemRepository>.value(
-        value: mockRepo,
-        child: const App(),
+      MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<PoemRepository>.value(value: mockPoemRepo),
+          RepositoryProvider<FavouritesRepository>.value(value: mockFavRepo),
+        ],
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<FavouritesCubit>(
+              create: (_) => FavouritesCubit(
+                favouritesRepository: mockFavRepo,
+                poemRepository: mockPoemRepo,
+              )..loadFavourites(),
+            ),
+          ],
+          child: const App(),
+        ),
       ),
     );
     await tester.pumpAndSettle();

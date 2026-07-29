@@ -10,12 +10,18 @@ class DailyPoemContent extends StatelessWidget {
     required this.poem,
     required this.isFromCache,
     required this.formattedDate,
+    this.isFavourite = false,
+    this.isFavouriteUpdating = false,
+    this.onFavouriteToggle,
     super.key,
   });
 
   final Poem poem;
   final bool isFromCache;
   final String formattedDate;
+  final bool isFavourite;
+  final bool isFavouriteUpdating;
+  final VoidCallback? onFavouriteToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +64,30 @@ class DailyPoemContent extends StatelessWidget {
                 PoemCard(poem: poem),
                 const SizedBox(height: 20),
                 _SourceInfo(poem: poem),
+                const SizedBox(height: 16),
+                if (onFavouriteToggle != null)
+                  Center(
+                    child: Semantics(
+                      label: isFavourite
+                          ? 'Remove from favourites'
+                          : 'Add to favourites',
+                      child: IconButton(
+                        icon: Icon(
+                          isFavourite ? Icons.favorite : Icons.favorite_outline,
+                        ),
+                        color: isFavourite
+                            ? AppColors.lightAccent
+                            : AppColors.lightMuted,
+                        iconSize: 28,
+                        onPressed: isFavouriteUpdating
+                            ? null
+                            : onFavouriteToggle,
+                        tooltip: isFavourite
+                            ? 'Remove from favourites'
+                            : 'Add to favourites',
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 24),
               ],
             ),
