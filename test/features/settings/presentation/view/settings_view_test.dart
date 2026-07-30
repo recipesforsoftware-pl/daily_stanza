@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:daily_stanza/core/config/app_links.dart';
+import 'package:daily_stanza/core/theme/app_colors.dart';
+import 'package:daily_stanza/core/theme/app_theme.dart';
 import 'package:daily_stanza/features/settings/domain/model/app_info.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
@@ -35,6 +37,7 @@ Widget _buildApp({
   required MockThemePreferencesCubit themeCubit,
   MockAppInformationCubit? appInfoCubit,
   MockExternalLinkLauncher? launcher,
+  ThemeMode themeMode = ThemeMode.light,
 }) {
   final appCubit = appInfoCubit ?? MockAppInformationCubit();
   final linkLauncher = launcher ?? MockExternalLinkLauncher();
@@ -46,6 +49,9 @@ Widget _buildApp({
     );
   }
   return MaterialApp(
+    theme: AppTheme.light,
+    darkTheme: AppTheme.dark,
+    themeMode: themeMode,
     home: MultiBlocProvider(
       providers: [
         BlocProvider<LanguagePreferencesCubit>.value(value: langCubit),
@@ -1359,6 +1365,215 @@ void main() {
 
       expect(find.text('GitHub repository'), findsOneWidget);
       expect(find.byIcon(Icons.open_in_new), findsAtLeast(2));
+    });
+
+    // --- AppBar title contrast tests ---
+
+    testWidgets('light theme: AppBar title "Settings" renders', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      expect(find.text('Settings'), findsOneWidget);
+    });
+
+    testWidgets('light theme: AppBar title uses readable foreground', (
+      tester,
+    ) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      final titleText = tester.widget<Text>(find.text('Settings'));
+      if (titleText.style?.color != null) {
+        expect(titleText.style?.color, equals(AppColors.lightFg));
+      } else {
+        final defaultTextStyle = tester.widget<DefaultTextStyle>(
+          find.ancestor(
+            of: find.text('Settings'),
+            matching: find.byType(DefaultTextStyle),
+          ).first,
+        );
+        expect(defaultTextStyle.style.color, equals(AppColors.lightFg));
+      }
+    });
+
+    testWidgets('dark theme: AppBar title "Settings" renders', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Settings'), findsOneWidget);
+    });
+
+    testWidgets('light theme: AppBar title is not white', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      final titleText = tester.widget<Text>(find.text('Settings'));
+      expect(titleText.style?.color, isNot(equals(Colors.white)));
+    });
+
+    testWidgets('dark theme: AppBar title is not dark', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      final titleText = tester.widget<Text>(find.text('Settings'));
+      expect(titleText.style?.color, isNot(equals(AppColors.darkBg)));
+    });
+
+    testWidgets('large text scale does not cause AppBar overflow', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.platformDispatcher.textScaleFactorTestValue = 1.5;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.platformDispatcher.clearTextScaleFactorTestValue();
+      });
+
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('small viewport does not cause layout exceptions', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(langCubit: mockLangCubit, themeCubit: mockThemeCubit),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
     });
   });
 }

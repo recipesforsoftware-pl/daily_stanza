@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:daily_stanza/core/theme/app_colors.dart';
 import 'package:daily_stanza/core/theme/app_text_styles.dart';
 import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/widgets/offline_poem_banner.dart';
@@ -28,6 +27,7 @@ class DailyPoemContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -40,14 +40,14 @@ class DailyPoemContent extends StatelessWidget {
                 Text(
                   formattedDate,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.lightMuted,
+                    color: colors.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "Today's poem",
                   style: AppTextStyles.headlineSmall.copyWith(
-                    color: AppColors.lightFg,
+                    color: colors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -79,8 +79,8 @@ class DailyPoemContent extends StatelessWidget {
                           isFavourite ? Icons.favorite : Icons.favorite_outline,
                         ),
                         color: isFavourite
-                            ? AppColors.lightAccent
-                            : AppColors.lightMuted,
+                            ? colors.primary
+                            : colors.onSurfaceVariant,
                         iconSize: 28,
                         onPressed: isFavouriteUpdating
                             ? null
@@ -105,7 +105,7 @@ class DailyPoemContent extends StatelessWidget {
                         icon: const Icon(Icons.open_in_full, size: 18),
                         label: const Text('Read in focus mode'),
                         style: TextButton.styleFrom(
-                          foregroundColor: AppColors.lightMuted,
+                          foregroundColor: colors.onSurfaceVariant,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 8,
@@ -156,16 +156,19 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.lightSurface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.lightBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Text(
         label,
-        style: AppTextStyles.labelMedium.copyWith(color: AppColors.lightMuted),
+        style: AppTextStyles.labelMedium.copyWith(
+          color: colors.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -178,17 +181,22 @@ class _SourceInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Source: ${poem.sourceName}',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.lightMuted),
+          style: AppTextStyles.bodySmall.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           'Rights: ${poem.rightsStatus.replaceAll('_', ' ')}',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.lightMuted),
+          style: AppTextStyles.bodySmall.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
         ),
       ],
     );

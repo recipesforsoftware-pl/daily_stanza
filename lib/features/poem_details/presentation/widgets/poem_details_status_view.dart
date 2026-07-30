@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:daily_stanza/core/theme/app_colors.dart';
 import 'package:daily_stanza/core/theme/app_text_styles.dart';
 
 class PoemDetailsStatusView extends StatelessWidget {
@@ -20,6 +19,7 @@ class PoemDetailsStatusView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return SafeArea(
       child: Center(
         child: Padding(
@@ -40,7 +40,7 @@ class PoemDetailsStatusView extends StatelessWidget {
               Text(
                 title,
                 style: AppTextStyles.headlineSmall.copyWith(
-                  color: AppColors.lightFg,
+                  color: colors.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -48,7 +48,7 @@ class PoemDetailsStatusView extends StatelessWidget {
               Text(
                 message,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.lightMuted,
+                  color: colors.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -59,8 +59,6 @@ class PoemDetailsStatusView extends StatelessWidget {
                   icon: const Icon(Icons.refresh, size: 18),
                   label: const Text('Try again'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.lightAccent,
-                    foregroundColor: Colors.white,
                     minimumSize: const Size(0, 48),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,

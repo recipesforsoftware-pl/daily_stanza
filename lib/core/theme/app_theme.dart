@@ -25,18 +25,21 @@ class AppTheme {
       onSurface: AppColors.lightFg,
       outline: AppColors.lightBorder,
       outlineVariant: AppColors.lightBorder,
+      onSurfaceVariant: AppColors.lightMuted,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.lightBg,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.lightSurface,
         foregroundColor: AppColors.lightFg,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.headlineSmall,
+        titleTextStyle: AppTextStyles.headlineSmall.copyWith(
+          color: AppColors.lightFg,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.lightSurface,
@@ -104,18 +107,21 @@ class AppTheme {
       onSurface: AppColors.darkFg,
       outline: AppColors.darkBorder,
       outlineVariant: AppColors.darkBorder,
+      onSurfaceVariant: AppColors.darkMuted,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.darkBg,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.darkSurface,
         foregroundColor: AppColors.darkFg,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.headlineSmall,
+        titleTextStyle: AppTextStyles.headlineSmall.copyWith(
+          color: AppColors.darkFg,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.darkSurface,

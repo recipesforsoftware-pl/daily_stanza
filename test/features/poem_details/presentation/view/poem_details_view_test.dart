@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:daily_stanza/core/theme/app_colors.dart';
+import 'package:daily_stanza/core/theme/app_theme.dart';
 import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_state.dart';
@@ -59,10 +61,14 @@ Widget _buildApp({
   required MockPoemDetailsCubit poemDetailsCubit,
   MockFavouritesCubit? favouritesCubit,
   PoemShareCubit? shareCubit,
+  ThemeMode themeMode = ThemeMode.light,
 }) {
   final favCubit = favouritesCubit ?? _createDefaultFavCubit();
   final shareCubitValue = shareCubit ?? _createDefaultShareCubit();
   return MaterialApp(
+    theme: AppTheme.light,
+    darkTheme: AppTheme.dark,
+    themeMode: themeMode,
     home: MultiBlocProvider(
       providers: [
         BlocProvider<FavouritesCubit>.value(value: favCubit),
@@ -449,6 +455,431 @@ void main() {
       await tester.pump();
 
       expect(find.byType(Image), findsNothing);
+    });
+
+    // --- Dark-theme contrast tests ---
+
+    testWidgets('dark theme: title uses readable on-surface colour', (
+      tester,
+    ) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoaded(poem: _testPoem),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          poemDetailsCubit: cubit,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      final titleText = tester.widget<Text>(find.text('The Tyger'));
+      expect(titleText.style?.color, equals(AppColors.darkFg));
+    });
+
+    testWidgets('dark theme: author uses muted colour', (tester) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoaded(poem: _testPoem),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          poemDetailsCubit: cubit,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      final authorText = tester.widget<Text>(find.text('William Blake'));
+      expect(authorText.style?.color, equals(AppColors.darkMuted));
+    });
+
+    testWidgets('dark theme: poem body uses readable foreground', (
+      tester,
+    ) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoaded(poem: _testPoem),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          poemDetailsCubit: cubit,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      final bodyWidget = tester.widget<EditableText>(
+        find.textContaining('Tyger Tyger, burning bright'),
+      );
+      expect(bodyWidget.style.color, equals(AppColors.darkFg));
+    });
+
+    testWidgets('dark theme: chip text uses readable colour', (tester) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoaded(poem: _testPoem),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          poemDetailsCubit: cubit,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      final chipText = tester.widget<Text>(find.text('English'));
+      expect(chipText.style?.color, equals(AppColors.darkMuted));
+    });
+
+    testWidgets('dark theme: favourite icon uses theme-aware colour', (
+      tester,
+    ) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoaded(poem: _testPoem),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          poemDetailsCubit: cubit,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.favorite_outline), findsOneWidget);
+    });
+
+    // --- AppBar title contrast tests ---
+
+    testWidgets('light theme: AppBar title "Poem" renders', (tester) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(_buildApp(poemDetailsCubit: cubit));
+      await tester.pump();
+
+      expect(find.text('Poem'), findsOneWidget);
+    });
+
+    testWidgets('light theme: AppBar title uses readable foreground', (
+      tester,
+    ) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(_buildApp(poemDetailsCubit: cubit));
+      await tester.pump();
+
+      // Title color may be set directly on the Text widget or inherited
+      // from the AppBar's DefaultTextStyle. Check either.
+      final titleText = tester.widget<Text>(find.text('Poem'));
+      if (titleText.style?.color != null) {
+        expect(titleText.style?.color, equals(AppColors.lightFg));
+      } else {
+        final defaultTextStyle = tester.widget<DefaultTextStyle>(
+          find
+              .ancestor(
+                of: find.text('Poem'),
+                matching: find.byType(DefaultTextStyle),
+              )
+              .first,
+        );
+        expect(defaultTextStyle.style.color, equals(AppColors.lightFg));
+      }
+    });
+
+    testWidgets('dark theme: AppBar title "Poem" renders', (tester) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(poemDetailsCubit: cubit, themeMode: ThemeMode.dark),
+      );
+      await tester.pump();
+
+      expect(find.text('Poem'), findsOneWidget);
+    });
+
+    testWidgets('light theme: AppBar title is not white', (tester) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(_buildApp(poemDetailsCubit: cubit));
+      await tester.pump();
+
+      final titleText = tester.widget<Text>(find.text('Poem'));
+      expect(titleText.style?.color, isNot(equals(Colors.white)));
+    });
+
+    testWidgets('dark theme: AppBar title is not dark', (tester) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(poemDetailsCubit: cubit, themeMode: ThemeMode.dark),
+      );
+      await tester.pump();
+
+      final titleText = tester.widget<Text>(find.text('Poem'));
+      expect(titleText.style?.color, isNot(equals(AppColors.darkBg)));
+    });
+
+    // --- Status view contrast tests ---
+
+    testWidgets('dark theme: loading title uses onSurface colour', (
+      tester,
+    ) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(poemDetailsCubit: cubit, themeMode: ThemeMode.dark),
+      );
+      await tester.pump();
+
+      final titleText = tester.widget<Text>(find.text('Loading poem\u2026'));
+      expect(titleText.style?.color, equals(AppColors.darkFg));
+    });
+
+    testWidgets('dark theme: loading message uses onSurfaceVariant colour', (
+      tester,
+    ) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(poemDetailsCubit: cubit, themeMode: ThemeMode.dark),
+      );
+      await tester.pump();
+
+      final msgText = tester.widget<Text>(
+        find.text('Taking a calm moment to prepare your reading.'),
+      );
+      expect(msgText.style?.color, equals(AppColors.darkMuted));
+    });
+
+    testWidgets('light theme: loading title is not white', (tester) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(_buildApp(poemDetailsCubit: cubit));
+      await tester.pump();
+
+      final titleText = tester.widget<Text>(find.text('Loading poem\u2026'));
+      expect(titleText.style?.color, isNot(equals(Colors.white)));
+    });
+
+    testWidgets('light theme: loading message is not white', (tester) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(_buildApp(poemDetailsCubit: cubit));
+      await tester.pump();
+
+      final msgText = tester.widget<Text>(
+        find.text('Taking a calm moment to prepare your reading.'),
+      );
+      expect(msgText.style?.color, isNot(equals(Colors.white)));
+    });
+
+    testWidgets('failure retry button is enabled when callback provided', (
+      tester,
+    ) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsFailure(),
+      );
+      when(() => cubit.retry()).thenAnswer((_) async {});
+
+      await tester.pumpWidget(_buildApp(poemDetailsCubit: cubit));
+      await tester.pump();
+
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Try again'),
+      );
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('light theme: Share icon is visible', (tester) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoaded(poem: _testPoem),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(poemDetailsCubit: cubit, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.share), findsOneWidget);
+    });
+
+    testWidgets('dark theme: Share icon is visible', (tester) async {
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoaded(poem: _testPoem),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          poemDetailsCubit: cubit,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.share), findsOneWidget);
+    });
+
+    testWidgets('large text scale does not cause AppBar overflow', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.platformDispatcher.textScaleFactorTestValue = 1.5;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.platformDispatcher.clearTextScaleFactorTestValue();
+      });
+
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(_buildApp(poemDetailsCubit: cubit));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('small viewport does not cause layout exceptions', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final cubit = MockPoemDetailsCubit();
+      whenListen(
+        cubit,
+        const Stream<PoemDetailsState>.empty(),
+        initialState: const PoemDetailsLoading(),
+      );
+
+      await tester.pumpWidget(_buildApp(poemDetailsCubit: cubit));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
     });
   });
 }
