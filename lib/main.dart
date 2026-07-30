@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:daily_stanza/app.dart';
 import 'package:daily_stanza/core/config/app_environment.dart';
 import 'package:daily_stanza/core/firebase/firebase_bootstrap.dart';
+import 'package:daily_stanza/core/router/app_router.dart';
 import 'package:daily_stanza/features/daily_poem/data/datasource/firestore_poem_data_source.dart';
 import 'package:daily_stanza/features/daily_poem/data/repository/poem_repository_impl.dart';
 import 'package:daily_stanza/features/daily_poem/domain/repository/poem_repository.dart';
@@ -12,6 +13,11 @@ import 'package:daily_stanza/features/favourites/data/repository/favourites_repo
 import 'package:daily_stanza/features/favourites/domain/repository/favourites_repository.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_state.dart';
+import 'package:daily_stanza/features/onboarding/data/datasource/local_onboarding_data_source.dart';
+import 'package:daily_stanza/features/onboarding/data/repository/onboarding_repository_impl.dart';
+import 'package:daily_stanza/features/onboarding/domain/repository/onboarding_repository.dart';
+import 'package:daily_stanza/features/onboarding/presentation/cubit/onboarding_cubit.dart';
+import 'package:daily_stanza/features/onboarding/presentation/cubit/onboarding_state.dart';
 import 'package:daily_stanza/features/settings/data/datasource/local_language_preferences_data_source.dart';
 import 'package:daily_stanza/features/settings/data/datasource/local_theme_preferences_data_source.dart';
 import 'package:daily_stanza/features/settings/data/repository/language_preferences_repository_impl.dart';
@@ -71,6 +77,16 @@ void main() async {
     initialPreference = ThemePreference.system;
   }
 
+  // ---- Onboarding completion ----
+  final onboardingDataSource = LocalOnboardingDataSource(
+    sharedPreferences: sharedPreferences,
+  );
+  final onboardingRepository = OnboardingRepositoryImpl(
+    dataSource: onboardingDataSource,
+  );
+  final onboardingCubit = OnboardingCubit(repository: onboardingRepository);
+  final router = createRouter(onboardingCubit: onboardingCubit);
+
   final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   runApp(
@@ -85,6 +101,9 @@ void main() async {
         ),
         RepositoryProvider<ThemePreferencesRepository>.value(
           value: themePreferencesRepository,
+        ),
+        RepositoryProvider<OnboardingRepository>.value(
+          value: onboardingRepository,
         ),
       ],
       child: MultiBlocProvider(
@@ -107,6 +126,7 @@ void main() async {
               initialPreference: initialPreference,
             ),
           ),
+          BlocProvider<OnboardingCubit>.value(value: onboardingCubit),
         ],
         child: MultiBlocListener(
           listeners: [
@@ -159,9 +179,23 @@ void main() async {
                   ..showSnackBar(SnackBar(content: Text(error)));
               },
             ),
+            BlocListener<OnboardingCubit, OnboardingState>(
+              listenWhen: (previous, current) {
+                return current.mutationError != null &&
+                    current.mutationError != previous.mutationError;
+              },
+              listener: (context, state) {
+                final error = state.mutationError;
+                if (error == null) return;
+                scaffoldMessengerKey.currentState
+                  ?..hideCurrentSnackBar()
+                  ..showSnackBar(SnackBar(content: Text(error)));
+              },
+            ),
           ],
           child: App(
             scaffoldMessengerKey: scaffoldMessengerKey,
+            routerConfig: router,
             shareService: SharePlusPoemShareService(),
           ),
         ),

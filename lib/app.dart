@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:daily_stanza/core/theme/app_theme.dart';
 import 'package:daily_stanza/core/router/app_router.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
@@ -14,11 +15,13 @@ import 'package:daily_stanza/features/share_poem/presentation/cubit/poem_share_s
 class App extends StatelessWidget {
   App({
     required this.scaffoldMessengerKey,
+    this.routerConfig,
     PoemShareService? shareService,
     super.key,
   }) : _shareService = shareService;
 
   final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey;
+  final GoRouter? routerConfig;
   final PoemShareService? _shareService;
 
   @override
@@ -48,7 +51,7 @@ class App extends StatelessWidget {
               theme: AppTheme.light,
               darkTheme: AppTheme.dark,
               themeMode: toThemeMode(themeState.preference),
-              routerConfig: appRouter,
+              routerConfig: routerConfig ?? appRouter,
               debugShowCheckedModeBanner: false,
             );
           },
