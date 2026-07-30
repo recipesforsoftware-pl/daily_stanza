@@ -2,6 +2,10 @@
 //
 // Seeds the Firestore emulator with poem and daily-assignment data.
 //
+// This tool targets the Firestore emulator **only**. The project ID is
+// hardcoded to "demo-daily-stanza" and cannot be overridden to production.
+// Production seeding is a separate, authenticated process outside this tool.
+//
 // Usage:
 //   dart run tool/seed_firestore.dart
 //   dart run tool/seed_firestore.dart --date 2026-07-28
