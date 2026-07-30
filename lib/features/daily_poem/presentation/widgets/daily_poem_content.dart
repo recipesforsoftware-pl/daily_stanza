@@ -64,7 +64,10 @@ class DailyPoemContent extends StatelessWidget {
                   const OfflinePoemBanner(),
                   const SizedBox(height: 16),
                 ],
-                PoemCard(poem: poem),
+                SizedBox(
+                  width: double.infinity,
+                  child: PoemCard(poem: poem),
+                ),
                 const SizedBox(height: 20),
                 _SourceInfo(poem: poem),
                 const SizedBox(height: 16),

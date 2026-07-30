@@ -67,6 +67,18 @@ const _longPoem = Poem(
   rightsStatus: 'public_domain',
 );
 
+const _shortLinePoem = Poem(
+  id: 'short1',
+  title: 'Na zdrowie',
+  author: 'Jan Kochanowski',
+  languageCode: 'pl',
+  countryCode: 'PL',
+  content: 'Szczęść\nBoże\npijmy\nzdrowie',
+  sourceName: 'Fraszki',
+  sourceUrl: 'https://pl.wikisource.org',
+  rightsStatus: 'public_domain',
+);
+
 Widget _buildApp({
   required MockDailyPoemBloc dailyPoemBloc,
   MockFavouritesCubit? favouritesCubit,
@@ -997,6 +1009,135 @@ void main() {
           favouritesCubit: favCubit,
           themeMode: ThemeMode.dark,
         ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    // --- Poem card width regression tests ---
+
+    testWidgets('short poem card fills the available content width', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _shortLinePoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      final cardSize = tester.getSize(find.byType(Card));
+      expect(cardSize.width, 560);
+    });
+
+    testWidgets('short and long poems produce the same card width', (
+      tester,
+    ) async {
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      // Short poem
+      final shortBloc = MockDailyPoemBloc();
+      whenListen(
+        shortBloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _shortLinePoem,
+          isFromCache: false,
+        ),
+      );
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: shortBloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+      final shortWidth = tester.getSize(find.byType(Card)).width;
+
+      // Long poem
+      final longBloc = MockDailyPoemBloc();
+      whenListen(
+        longBloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _longPoem,
+          isFromCache: false,
+        ),
+      );
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: longBloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+      final longWidth = tester.getSize(find.byType(Card)).width;
+
+      expect(shortWidth, equals(longWidth));
+    });
+
+    testWidgets('card respects horizontal page padding', (tester) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      final cardSize = tester.getSize(find.byType(Card));
+      const totalHorizontalPadding = 40.0;
+      // Card width + page padding must not exceed viewport width
+      expect(cardSize.width + totalHorizontalPadding, lessThanOrEqualTo(800.0));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('short poem produces no horizontal overflow', (tester) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _shortLinePoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
       );
       await tester.pump();
 
