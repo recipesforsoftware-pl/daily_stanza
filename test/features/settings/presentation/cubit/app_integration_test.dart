@@ -16,7 +16,10 @@ import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_c
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
 import 'package:daily_stanza/features/settings/domain/repository/language_preferences_repository.dart';
+import 'package:daily_stanza/features/settings/domain/model/app_info.dart';
 import 'package:daily_stanza/features/settings/domain/repository/theme_preferences_repository.dart';
+import 'package:daily_stanza/features/settings/domain/service/app_info_service.dart';
+import 'package:daily_stanza/features/settings/domain/service/external_link_launcher.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
 
@@ -29,6 +32,10 @@ class _MockLanguagePreferencesRepository extends Mock
 
 class _MockThemePreferencesRepository extends Mock
     implements ThemePreferencesRepository {}
+
+class _MockAppInfoService extends Mock implements AppInfoService {}
+
+class _MockExternalLinkLauncher extends Mock implements ExternalLinkLauncher {}
 
 const _testPoem = Poem(
   id: 'poem1',
@@ -64,6 +71,18 @@ _AppBundle _buildApp({
     repository: themePreferencesRepository,
     initialPreference: initialPreference,
   );
+  final mockAppInfoService = _MockAppInfoService();
+  when(() => mockAppInfoService.getAppInfo()).thenAnswer(
+    (_) async => const AppInfo(
+      appName: 'Daily Stanza',
+      version: '1.0.0',
+      buildNumber: '1',
+    ),
+  );
+  final mockExternalLinkLauncher = _MockExternalLinkLauncher();
+  when(
+    () => mockExternalLinkLauncher.launchUrl(any()),
+  ).thenAnswer((_) async => true);
 
   final app = MultiRepositoryProvider(
     providers: [
@@ -76,6 +95,10 @@ _AppBundle _buildApp({
       ),
       RepositoryProvider<ThemePreferencesRepository>.value(
         value: themePreferencesRepository,
+      ),
+      RepositoryProvider<AppInfoService>.value(value: mockAppInfoService),
+      RepositoryProvider<ExternalLinkLauncher>.value(
+        value: mockExternalLinkLauncher,
       ),
     ],
     child: MultiBlocProvider(
@@ -114,6 +137,7 @@ void main() {
     registerFallbackValue(ThemePreference.system);
     registerFallbackValue(ThemePreference.light);
     registerFallbackValue(ThemePreference.dark);
+    registerFallbackValue(Uri());
   });
 
   setUp(() {

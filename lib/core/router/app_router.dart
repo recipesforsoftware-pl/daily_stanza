@@ -12,6 +12,8 @@ import 'package:daily_stanza/features/onboarding/presentation/view/onboarding_sc
 import 'package:daily_stanza/features/onboarding/presentation/view/splash_screen.dart';
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_cubit.dart';
 import 'package:daily_stanza/features/poem_details/presentation/view/poem_details_view.dart';
+import 'package:daily_stanza/features/settings/domain/service/app_info_service.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/app_information_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/view/settings_view.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -77,7 +79,12 @@ List<RouteBase> _buildRoutes({GlobalKey<NavigatorState>? rootNavigatorKey}) {
           routes: [
             GoRoute(
               path: '/settings',
-              builder: (context, state) => const SettingsView(),
+              builder: (context, state) => BlocProvider(
+                create: (context) => AppInformationCubit(
+                  appInfoService: context.read<AppInfoService>(),
+                )..load(),
+                child: const SettingsView(),
+              ),
             ),
           ],
         ),

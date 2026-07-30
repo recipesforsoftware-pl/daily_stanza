@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:daily_stanza/core/config/app_links.dart';
+import 'package:daily_stanza/features/settings/domain/model/app_info.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
+import 'package:daily_stanza/features/settings/domain/service/external_link_launcher.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/app_information_cubit.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/app_information_state.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
@@ -19,17 +24,38 @@ class MockThemePreferencesCubit
     extends MockBloc<ThemePreferencesCubit, ThemePreferencesState>
     implements ThemePreferencesCubit {}
 
+class MockAppInformationCubit
+    extends MockBloc<AppInformationCubit, AppInformationState>
+    implements AppInformationCubit {}
+
+class MockExternalLinkLauncher extends Mock implements ExternalLinkLauncher {}
+
 Widget _buildApp({
   required MockLanguagePreferencesCubit langCubit,
   required MockThemePreferencesCubit themeCubit,
+  MockAppInformationCubit? appInfoCubit,
+  MockExternalLinkLauncher? launcher,
 }) {
+  final appCubit = appInfoCubit ?? MockAppInformationCubit();
+  final linkLauncher = launcher ?? MockExternalLinkLauncher();
+  if (appInfoCubit == null) {
+    whenListen(
+      appCubit,
+      const Stream<AppInformationState>.empty(),
+      initialState: const AppInformationState(),
+    );
+  }
   return MaterialApp(
     home: MultiBlocProvider(
       providers: [
         BlocProvider<LanguagePreferencesCubit>.value(value: langCubit),
         BlocProvider<ThemePreferencesCubit>.value(value: themeCubit),
+        BlocProvider<AppInformationCubit>.value(value: appCubit),
       ],
-      child: const SettingsView(),
+      child: RepositoryProvider<ExternalLinkLauncher>.value(
+        value: linkLauncher,
+        child: const SettingsView(),
+      ),
     ),
   );
 }
@@ -44,6 +70,7 @@ void main() {
     registerFallbackValue(ThemePreference.system);
     registerFallbackValue(ThemePreference.light);
     registerFallbackValue(ThemePreference.dark);
+    registerFallbackValue(Uri());
   });
 
   setUp(() {
@@ -839,6 +866,499 @@ void main() {
       expect(find.text('Notifications'), findsNothing);
       expect(find.text('Account'), findsNothing);
       expect(find.text('Subscription'), findsNothing);
+    });
+
+    // --- App information section tests ---
+
+    testWidgets('App information section is visible', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('App information'), findsOneWidget);
+    });
+
+    testWidgets('Application name is rendered', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Application name'), findsOneWidget);
+      expect(find.text('Daily Stanza'), findsOneWidget);
+    });
+
+    testWidgets('version and build number are rendered', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(
+          appInfo: AppInfo(
+            appName: 'Daily Stanza',
+            version: '1.0.0',
+            buildNumber: '1',
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Version'), findsOneWidget);
+      expect(find.text('Version 1.0.0 (1)'), findsOneWidget);
+    });
+
+    testWidgets('tapping GitHub row requests the exact repository URI', (
+      tester,
+    ) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(),
+      );
+      final mockLauncher = MockExternalLinkLauncher();
+      when(() => mockLauncher.launchUrl(any())).thenAnswer((_) async => true);
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+          launcher: mockLauncher,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('GitHub repository'));
+      await tester.pump();
+
+      verify(() => mockLauncher.launchUrl(AppLinks.githubRepository)).called(1);
+    });
+
+    testWidgets('tapping Privacy policy row requests the exact privacy URI', (
+      tester,
+    ) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(),
+      );
+      final mockLauncher = MockExternalLinkLauncher();
+      when(() => mockLauncher.launchUrl(any())).thenAnswer((_) async => true);
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+          launcher: mockLauncher,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Privacy policy'));
+      await tester.pump();
+
+      verify(() => mockLauncher.launchUrl(AppLinks.privacyPolicy)).called(1);
+    });
+
+    testWidgets('launch failure does not crash and shows feedback', (
+      tester,
+    ) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(),
+      );
+      final mockLauncher = MockExternalLinkLauncher();
+      when(() => mockLauncher.launchUrl(any())).thenAnswer((_) async => false);
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+          launcher: mockLauncher,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Privacy policy'));
+      await tester.pump();
+
+      expect(find.text('Could not open the link.'), findsOneWidget);
+    });
+
+    testWidgets('language controls remain functional after adding app info', (
+      tester,
+    ) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.polish,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(),
+      );
+      when(() => mockLangCubit.changeLanguage(any())).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(
+        find.widgetWithText(RadioListTile<PoemLanguage>, 'English'),
+      );
+      await tester.pump();
+
+      verify(
+        () => mockLangCubit.changeLanguage(PoemLanguage.english),
+      ).called(1);
+    });
+
+    testWidgets('theme controls remain functional after adding app info', (
+      tester,
+    ) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.light,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(),
+      );
+      when(() => mockThemeCubit.changeTheme(any())).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(
+        find.widgetWithText(RadioListTile<ThemePreference>, 'System'),
+      );
+      await tester.pump();
+
+      verify(
+        () => mockThemeCubit.changeTheme(ThemePreference.system),
+      ).called(1);
+    });
+
+    testWidgets('App information section renders without overflow at 360x800', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.system,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(
+          appInfo: AppInfo(
+            appName: 'Daily Stanza',
+            version: '1.0.0',
+            buildNumber: '1',
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'App information section renders without overflow with increased text scale',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        tester.view.platformDispatcher.textScaleFactorTestValue = 1.5;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.platformDispatcher.clearTextScaleFactorTestValue();
+        });
+
+        whenListen(
+          mockLangCubit,
+          const Stream<LanguagePreferencesState>.empty(),
+          initialState: const LanguagePreferencesState(
+            language: PoemLanguage.english,
+          ),
+        );
+        whenListen(
+          mockThemeCubit,
+          const Stream<ThemePreferencesState>.empty(),
+          initialState: const ThemePreferencesState(
+            preference: ThemePreference.system,
+          ),
+        );
+        final mockAppInfoCubit = MockAppInformationCubit();
+        whenListen(
+          mockAppInfoCubit,
+          const Stream<AppInformationState>.empty(),
+          initialState: const AppInformationState(
+            appInfo: AppInfo(
+              appName: 'Daily Stanza',
+              version: '1.0.0',
+              buildNumber: '1',
+            ),
+          ),
+        );
+
+        await tester.pumpWidget(
+          _buildApp(
+            langCubit: mockLangCubit,
+            themeCubit: mockThemeCubit,
+            appInfoCubit: mockAppInfoCubit,
+          ),
+        );
+        await tester.pump();
+
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('GitHub row renders with light theme', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.light,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('GitHub repository'), findsOneWidget);
+      expect(find.byIcon(Icons.open_in_new), findsAtLeast(2));
+    });
+
+    testWidgets('GitHub row renders with dark theme', (tester) async {
+      whenListen(
+        mockLangCubit,
+        const Stream<LanguagePreferencesState>.empty(),
+        initialState: const LanguagePreferencesState(
+          language: PoemLanguage.english,
+        ),
+      );
+      whenListen(
+        mockThemeCubit,
+        const Stream<ThemePreferencesState>.empty(),
+        initialState: const ThemePreferencesState(
+          preference: ThemePreference.dark,
+        ),
+      );
+      final mockAppInfoCubit = MockAppInformationCubit();
+      whenListen(
+        mockAppInfoCubit,
+        const Stream<AppInformationState>.empty(),
+        initialState: const AppInformationState(),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          langCubit: mockLangCubit,
+          themeCubit: mockThemeCubit,
+          appInfoCubit: mockAppInfoCubit,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('GitHub repository'), findsOneWidget);
+      expect(find.byIcon(Icons.open_in_new), findsAtLeast(2));
     });
   });
 }

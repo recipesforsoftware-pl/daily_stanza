@@ -26,10 +26,14 @@ import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
 import 'package:daily_stanza/features/settings/domain/repository/language_preferences_repository.dart';
 import 'package:daily_stanza/features/settings/domain/repository/theme_preferences_repository.dart';
+import 'package:daily_stanza/features/settings/domain/service/app_info_service.dart';
+import 'package:daily_stanza/features/settings/domain/service/external_link_launcher.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_state.dart';
+import 'package:daily_stanza/features/settings/data/service/package_info_app_info_service.dart';
+import 'package:daily_stanza/features/settings/data/service/url_launcher_external_link_launcher.dart';
 import 'package:daily_stanza/features/share_poem/data/service/share_plus_poem_share_service.dart';
 
 void main() async {
@@ -87,6 +91,10 @@ void main() async {
   final onboardingCubit = OnboardingCubit(repository: onboardingRepository);
   final router = createRouter(onboardingCubit: onboardingCubit);
 
+  // ---- App information & external links ----
+  final appInfoService = PackageInfoAppInfoService();
+  final externalLinkLauncher = UrlLauncherExternalLinkLauncher();
+
   final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
   runApp(
@@ -104,6 +112,10 @@ void main() async {
         ),
         RepositoryProvider<OnboardingRepository>.value(
           value: onboardingRepository,
+        ),
+        RepositoryProvider<AppInfoService>.value(value: appInfoService),
+        RepositoryProvider<ExternalLinkLauncher>.value(
+          value: externalLinkLauncher,
         ),
       ],
       child: MultiBlocProvider(
