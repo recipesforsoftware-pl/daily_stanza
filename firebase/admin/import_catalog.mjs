@@ -59,16 +59,19 @@ async function main() {
     return;
   }
 
-  const admin = await import('firebase-admin');
+  const { applicationDefault, getApps, initializeApp } = await import(
+    'firebase-admin/app'
+  );
+  const { getFirestore } = await import('firebase-admin/firestore');
 
-  if (admin.apps.length === 0) {
-    admin.initializeApp({
-      credential: admin.applicationDefault(),
+  if (getApps().length === 0) {
+    initializeApp({
+      credential: applicationDefault(),
       projectId: ALLOWED_PROJECT,
     });
   }
 
-  const db = admin.firestore();
+  const db = getFirestore();
 
   const BATCH_LIMIT = 400;
   let written = 0;
