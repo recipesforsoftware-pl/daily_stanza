@@ -418,7 +418,127 @@ class CatalogValidator {
     List<Map<String, dynamic>> poems,
     List<Map<String, dynamic>> assignments,
   ) {
-    return [];
+    final errors = <CatalogValidationError>[];
+
+    if (poems.length != 16) {
+      errors.add(
+        CatalogValidationError(
+          'catalog',
+          'poems.count',
+          'expected exactly 16 poems, got ${poems.length}',
+        ),
+      );
+    }
+
+    var enCount = 0;
+    var plCount = 0;
+    for (final p in poems) {
+      final lang = _asString(p['languageCode']);
+      if (lang == 'en') enCount++;
+      if (lang == 'pl') plCount++;
+    }
+    if (enCount != 8) {
+      errors.add(
+        CatalogValidationError(
+          'catalog',
+          'poems.english',
+          'expected exactly 8 English poems, got $enCount',
+        ),
+      );
+    }
+    if (plCount != 8) {
+      errors.add(
+        CatalogValidationError(
+          'catalog',
+          'poems.polish',
+          'expected exactly 8 Polish poems, got $plCount',
+        ),
+      );
+    }
+
+    if (assignments.length != 730) {
+      errors.add(
+        CatalogValidationError(
+          'catalog',
+          'assignments.count',
+          'expected exactly 730 assignments, got ${assignments.length}',
+        ),
+      );
+    }
+
+    var enAssign = 0;
+    var plAssign = 0;
+    for (final a in assignments) {
+      final lang = _asString(a['languageCode']);
+      if (lang == 'en') enAssign++;
+      if (lang == 'pl') plAssign++;
+    }
+    if (enAssign != 365) {
+      errors.add(
+        CatalogValidationError(
+          'catalog',
+          'assignments.english',
+          'expected exactly 365 English assignments, got $enAssign',
+        ),
+      );
+    }
+    if (plAssign != 365) {
+      errors.add(
+        CatalogValidationError(
+          'catalog',
+          'assignments.polish',
+          'expected exactly 365 Polish assignments, got $plAssign',
+        ),
+      );
+    }
+
+    var earliest = '';
+    var latest = '';
+    for (final a in assignments) {
+      final date = _asString(a['date']);
+      if (date.isEmpty) continue;
+      if (earliest.isEmpty || date.compareTo(earliest) < 0) earliest = date;
+      if (latest.isEmpty || date.compareTo(latest) > 0) latest = date;
+    }
+
+    if (earliest != '2026-07-30') {
+      errors.add(
+        CatalogValidationError(
+          'catalog',
+          'assignments.date_range',
+          'expected earliest date 2026-07-30, got "$earliest"',
+        ),
+      );
+    }
+    if (latest != '2027-07-29') {
+      errors.add(
+        CatalogValidationError(
+          'catalog',
+          'assignments.date_range',
+          'expected latest date 2027-07-29, got "$latest"',
+        ),
+      );
+    }
+
+    final usedPoems = <String>{};
+    for (final a in assignments) {
+      final pid = _asString(a['poemId']);
+      if (pid.isNotEmpty) usedPoems.add(pid);
+    }
+    for (final p in poems) {
+      final pid = _asString(p['id']);
+      if (pid.isNotEmpty && !usedPoems.contains(pid)) {
+        errors.add(
+          CatalogValidationError(
+            'catalog',
+            'poem.never_used',
+            'poem "$pid" is never assigned in daily_poems',
+          ),
+        );
+      }
+    }
+
+    return errors;
   }
 
   static CatalogSummary _buildSummary(

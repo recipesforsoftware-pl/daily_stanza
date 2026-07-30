@@ -5,7 +5,11 @@
     "node": "22"
   },
   "scripts": {
-    "test": "jest --runInBand --testMatch='**/test/**/*.test.js'"
+    "test": "jest --runInBand --testMatch='**/test/**/*.test.js'",
+    "catalog:import": "node admin/import_catalog.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^3.0.2",

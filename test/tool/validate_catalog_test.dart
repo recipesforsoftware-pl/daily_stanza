@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../tool/catalog_validator.dart';
@@ -42,62 +44,70 @@ Map<String, dynamic> _validAssignment({
   'isPublished': isPublished,
 };
 
+List<Map<String, dynamic>> _fullPoemSet() {
+  return [
+    _validPoem(id: 'en_poem_a', languageCode: 'en', countryCode: 'GB'),
+    _validPoem(id: 'en_poem_b', languageCode: 'en', countryCode: 'GB'),
+    _validPoem(id: 'en_poem_c', languageCode: 'en', countryCode: 'GB'),
+    _validPoem(id: 'en_poem_d', languageCode: 'en', countryCode: 'GB'),
+    _validPoem(id: 'en_poem_e', languageCode: 'en', countryCode: 'GB'),
+    _validPoem(id: 'en_poem_f', languageCode: 'en', countryCode: 'GB'),
+    _validPoem(id: 'en_poem_g', languageCode: 'en', countryCode: 'GB'),
+    _validPoem(id: 'en_poem_h', languageCode: 'en', countryCode: 'GB'),
+    _validPoem(id: 'pl_poem_a', languageCode: 'pl', countryCode: 'PL'),
+    _validPoem(id: 'pl_poem_b', languageCode: 'pl', countryCode: 'PL'),
+    _validPoem(id: 'pl_poem_c', languageCode: 'pl', countryCode: 'PL'),
+    _validPoem(id: 'pl_poem_d', languageCode: 'pl', countryCode: 'PL'),
+    _validPoem(id: 'pl_poem_e', languageCode: 'pl', countryCode: 'PL'),
+    _validPoem(id: 'pl_poem_f', languageCode: 'pl', countryCode: 'PL'),
+    _validPoem(id: 'pl_poem_g', languageCode: 'pl', countryCode: 'PL'),
+    _validPoem(id: 'pl_poem_h', languageCode: 'pl', countryCode: 'PL'),
+  ];
+}
+
+List<Map<String, dynamic>> _fullAssignmentSet(List<Map<String, dynamic>> poems) {
+  final enPoems = poems.where((p) => p['languageCode'] == 'en').map((p) => p['id'] as String).toList();
+  final plPoems = poems.where((p) => p['languageCode'] == 'pl').map((p) => p['id'] as String).toList();
+  final assignments = <Map<String, dynamic>>[];
+  for (var i = 0; i < 365; i++) {
+    final d = DateTime(2026, 7, 30 + i);
+    final ds = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final dc = '${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
+    assignments.add(_validAssignment(
+      id: 'en_$dc', date: ds, languageCode: 'en', poemId: enPoems[i % enPoems.length],
+    ));
+    assignments.add(_validAssignment(
+      id: 'pl_$dc', date: ds, languageCode: 'pl', poemId: plPoems[i % plPoems.length],
+    ));
+  }
+  return assignments;
+}
+
 void main() {
   group('CatalogValidator – poem validation', () {
-    test('1. current valid sample passes', () {
-      final poems = [
-        _validPoem(
-          id: 'william_blake_the_tyger',
-          title: 'The Tyger',
-          author: 'William Blake',
-          languageCode: 'en',
-          countryCode: 'GB',
-          content:
-              'Tyger Tyger, burning bright,\n'
-              'In the forests of the night;\n'
-              'What immortal hand or eye,\n'
-              'Could frame thy fearful symmetry?\n'
-              'In what distant deeps or skies,\n'
-              'Burnt the fire of thine eyes?',
-          sourceName: 'Songs of Experience (1794)',
-          sourceUrl: 'https://en.wikisource.org/wiki/The_Tyger',
-        ),
-        _validPoem(
-          id: 'juliusz_slowacki_testament_moj',
-          title: 'Testament mój',
-          author: 'Juliusz Słowacki',
-          languageCode: 'pl',
-          countryCode: 'PL',
-          content:
-              'Żyłem z wami, cierpiałem i płakałem z wami,\n'
-              'Nigdy mi, kto szlachetny, nie był obojętny,\n'
-              'Dziś was rzucam i dalej idę w cień — z duchami —\n'
-              'A jak gdyby tu szczęście było — idę smętny.',
-          sourceName: 'Dzieła Juliusza Słowackiego (1888)',
-          sourceUrl: 'https://pl.wikisource.org/wiki/Testament_m%C3%B3j',
-        ),
-      ];
-      final assignments = [
-        _validAssignment(
-          id: 'en_20260728',
-          date: '2026-07-28',
-          languageCode: 'en',
-          poemId: 'william_blake_the_tyger',
-        ),
-        _validAssignment(
-          id: 'pl_20260728',
-          date: '2026-07-28',
-          languageCode: 'pl',
-          poemId: 'juliusz_slowacki_testament_moj',
-        ),
-      ];
-
+    test('1. valid full catalog passes', () {
+      final poems = _fullPoemSet();
+      final assignments = _fullAssignmentSet(poems);
       final result = CatalogValidator.validateData(
         poems: poems,
         assignments: assignments,
       );
-
       expect(result.isValid, isTrue);
+    });
+
+    test('1b. full catalog from seed files passes', () {
+      final poemsFile = File('firebase/seed/poems.json');
+      final dailyFile = File('firebase/seed/daily_poems.json');
+      if (!poemsFile.existsSync() || !dailyFile.existsSync()) return;
+      final result = CatalogValidator.validate(
+        poemsPath: poemsFile.path,
+        assignmentsPath: dailyFile.path,
+      );
+      expect(result.isValid, isTrue);
+      expect(result.summary.totalPoems, 16);
+      expect(result.summary.englishPoems, 8);
+      expect(result.summary.polishPoems, 8);
+      expect(result.summary.totalAssignments, 730);
     });
 
     test('2. duplicate poem ID fails', () {
@@ -323,7 +333,8 @@ void main() {
         poems: poems,
         assignments: [],
       );
-      expect(result.isValid, isTrue);
+      final recordErrors = result.errors.where((e) => !e.record.startsWith('catalog'));
+      expect(recordErrors, isEmpty);
     });
 
     test('19. valid multiline poem content passes', () {
@@ -342,7 +353,8 @@ void main() {
         poems: poems,
         assignments: [],
       );
-      expect(result.isValid, isTrue);
+      final recordErrors = result.errors.where((e) => !e.record.startsWith('catalog'));
+      expect(recordErrors, isEmpty);
     });
 
     test('20. short poem (miniature) passes', () {
@@ -351,7 +363,8 @@ void main() {
         poems: poems,
         assignments: [],
       );
-      expect(result.isValid, isTrue);
+      final recordErrors = result.errors.where((e) => !e.record.startsWith('catalog'));
+      expect(recordErrors, isEmpty);
     });
 
     test('21. ASCII-only Polish poem passes', () {
@@ -368,7 +381,8 @@ void main() {
         poems: poems,
         assignments: [],
       );
-      expect(result.isValid, isTrue);
+      final recordErrors = result.errors.where((e) => !e.record.startsWith('catalog'));
+      expect(recordErrors, isEmpty);
     });
   });
 
@@ -418,6 +432,81 @@ void main() {
       expect(result.summary.totalAssignments, 2);
       expect(result.summary.earliestDate, '2026-07-28');
       expect(result.summary.latestDate, '2026-07-29');
+    });
+  });
+
+  group('CatalogValidator – invariants', () {
+    test('23. wrong poem count fails', () {
+      final poems = [_validPoem()];
+      final result = CatalogValidator.validateData(
+        poems: poems,
+        assignments: [],
+      );
+      expect(result.isValid, isFalse);
+      expect(result.errors.any((e) => e.message.contains('16')), isTrue);
+    });
+
+    test('24. wrong English/Polish count fails', () {
+      final poems = [
+        _validPoem(id: 'e1'), _validPoem(id: 'e2'),
+        _validPoem(id: 'e3'), _validPoem(id: 'e4'),
+        _validPoem(id: 'e5'), _validPoem(id: 'e6'),
+        _validPoem(id: 'e7'), _validPoem(id: 'e8'),
+        _validPoem(id: 'e9'), _validPoem(id: 'e10'),
+        _validPoem(id: 'p1', languageCode: 'pl', countryCode: 'PL'),
+        _validPoem(id: 'p2', languageCode: 'pl', countryCode: 'PL'),
+        _validPoem(id: 'p3', languageCode: 'pl', countryCode: 'PL'),
+        _validPoem(id: 'p4', languageCode: 'pl', countryCode: 'PL'),
+        _validPoem(id: 'p5', languageCode: 'pl', countryCode: 'PL'),
+      ];
+      final result = CatalogValidator.validateData(
+        poems: poems,
+        assignments: _fullAssignmentSet(poems),
+      );
+      expect(result.isValid, isFalse);
+      expect(result.errors.any((e) => e.message.contains('English')), isTrue);
+    });
+
+    test('25. wrong assignment count fails', () {
+      final poems = _fullPoemSet();
+      final result = CatalogValidator.validateData(
+        poems: poems,
+        assignments: [],
+      );
+      expect(result.isValid, isFalse);
+      expect(result.errors.any((e) => e.message.contains('730')), isTrue);
+    });
+
+    test('26. wrong per-language assignment count fails', () {
+      final poems = _fullPoemSet();
+      final result = CatalogValidator.validateData(
+        poems: poems,
+        assignments: [_validAssignment(poemId: 'en_poem_a')],
+      );
+      expect(result.isValid, isFalse);
+    });
+
+    test('27. date range validation fails', () {
+      final poems = _fullPoemSet();
+      final assignments = [_validAssignment(
+        id: 'en_20260101', date: '2026-01-01', poemId: 'en_poem_a',
+      )];
+      final result = CatalogValidator.validateData(
+        poems: poems,
+        assignments: assignments,
+      );
+      expect(result.isValid, isFalse);
+      expect(result.errors.any((e) => e.field == 'assignments.date_range'), isTrue);
+    });
+
+    test('28. poem never used fails', () {
+      final poems = _fullPoemSet();
+      final result = CatalogValidator.validateData(
+        poems: poems,
+        assignments: [_validAssignment(id: 'en_20260730', date: '2026-07-30', poemId: 'en_poem_a')],
+      );
+      expect(result.isValid, isFalse);
+      expect(result.errors.any((e) => e.field == 'poem.never_used'), isTrue);
     });
   });
 }
