@@ -11,6 +11,23 @@ read in a comfortable detail view. Poems are assigned deterministically for up
 to one year in advance, with new content added through a human-verified
 catalog workflow.
 
+## Screenshots
+
+| Android — Onboarding | iOS — Today, English |
+|:---:|:---:|
+| ![Daily Stanza onboarding on Android](docs/screenshots/android/01-onboarding.png) | ![English daily poem on iOS](docs/screenshots/ios/02-today-en.png) |
+
+| Android — Today, Polish | iOS — Favourites |
+|:---:|:---:|
+| ![Polish daily poem on Android](docs/screenshots/android/03-today-pl.png) | ![Local favourites on iOS](docs/screenshots/ios/04-favourites.png) |
+
+| Android — Poem detail | iOS — Dark theme |
+|:---:|:---:|
+| ![Poem detail screen on Android](docs/screenshots/android/05-poem-detail.png) | ![Dark appearance settings on iOS](docs/screenshots/ios/07-settings-dark.png) |
+
+Additional Android and iOS screens are available in
+[`docs/screenshots`](docs/screenshots).
+
 ## Features
 
 The following functionality is implemented in the current build:
