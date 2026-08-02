@@ -669,7 +669,9 @@ void main() {
       );
       await tester.pump();
 
-      final dateText = tester.widget<Text>(find.textContaining('July').last);
+      final dateText = tester.widget<Text>(
+        find.byKey(const ValueKey('dailyPoemDate')),
+      );
       expect(dateText.style?.color, isNot(equals(const Color(0xFF5D6080))));
     });
 

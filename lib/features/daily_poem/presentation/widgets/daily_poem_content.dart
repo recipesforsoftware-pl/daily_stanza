@@ -39,6 +39,7 @@ class DailyPoemContent extends StatelessWidget {
               children: [
                 Text(
                   formattedDate,
+                  key: const ValueKey('dailyPoemDate'),
                   style: AppTextStyles.bodySmall.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
