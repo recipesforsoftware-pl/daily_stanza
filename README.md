@@ -196,6 +196,15 @@ tool/                — seed, validation, provenance, secret-check scripts
 - **Ignored files** — all Firebase client configuration files are listed in
   `.gitignore`.
 
+## Support and privacy
+
+- **Privacy policy** — [PRIVACY_POLICY.md](PRIVACY_POLICY.md) explains how
+  Daily Stanza handles your data.
+- **Support** — [docs/support.md](docs/support.md) covers favourites, offline
+  behaviour, sharing, and how to report a bug.
+- **GitHub Issues** — [open an issue](https://github.com/recipesforsoftware-pl/daily_stanza/issues)
+  to report a problem or ask a question.
+
 ## License
 
 The Daily Stanza source code and project documentation are licensed under the
