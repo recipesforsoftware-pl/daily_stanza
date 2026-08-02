@@ -1,9 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalOnboardingDataSource {
-  LocalOnboardingDataSource({
-    required SharedPreferences sharedPreferences,
-  }) : _prefs = sharedPreferences;
+  LocalOnboardingDataSource({required SharedPreferences sharedPreferences})
+    : _prefs = sharedPreferences;
 
   final SharedPreferences _prefs;
 

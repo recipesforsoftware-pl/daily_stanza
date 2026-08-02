@@ -1421,10 +1421,12 @@ void main() {
         expect(titleText.style?.color, equals(AppColors.lightFg));
       } else {
         final defaultTextStyle = tester.widget<DefaultTextStyle>(
-          find.ancestor(
-            of: find.text('Settings'),
-            matching: find.byType(DefaultTextStyle),
-          ).first,
+          find
+              .ancestor(
+                of: find.text('Settings'),
+                matching: find.byType(DefaultTextStyle),
+              )
+              .first,
         );
         expect(defaultTextStyle.style.color, equals(AppColors.lightFg));
       }

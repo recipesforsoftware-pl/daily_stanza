@@ -65,20 +65,40 @@ List<Map<String, dynamic>> _fullPoemSet() {
   ];
 }
 
-List<Map<String, dynamic>> _fullAssignmentSet(List<Map<String, dynamic>> poems) {
-  final enPoems = poems.where((p) => p['languageCode'] == 'en').map((p) => p['id'] as String).toList();
-  final plPoems = poems.where((p) => p['languageCode'] == 'pl').map((p) => p['id'] as String).toList();
+List<Map<String, dynamic>> _fullAssignmentSet(
+  List<Map<String, dynamic>> poems,
+) {
+  final enPoems = poems
+      .where((p) => p['languageCode'] == 'en')
+      .map((p) => p['id'] as String)
+      .toList();
+  final plPoems = poems
+      .where((p) => p['languageCode'] == 'pl')
+      .map((p) => p['id'] as String)
+      .toList();
   final assignments = <Map<String, dynamic>>[];
   for (var i = 0; i < 365; i++) {
     final d = DateTime(2026, 7, 30 + i);
-    final ds = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-    final dc = '${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
-    assignments.add(_validAssignment(
-      id: 'en_$dc', date: ds, languageCode: 'en', poemId: enPoems[i % enPoems.length],
-    ));
-    assignments.add(_validAssignment(
-      id: 'pl_$dc', date: ds, languageCode: 'pl', poemId: plPoems[i % plPoems.length],
-    ));
+    final ds =
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final dc =
+        '${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}';
+    assignments.add(
+      _validAssignment(
+        id: 'en_$dc',
+        date: ds,
+        languageCode: 'en',
+        poemId: enPoems[i % enPoems.length],
+      ),
+    );
+    assignments.add(
+      _validAssignment(
+        id: 'pl_$dc',
+        date: ds,
+        languageCode: 'pl',
+        poemId: plPoems[i % plPoems.length],
+      ),
+    );
   }
   return assignments;
 }
@@ -333,7 +353,9 @@ void main() {
         poems: poems,
         assignments: [],
       );
-      final recordErrors = result.errors.where((e) => !e.record.startsWith('catalog'));
+      final recordErrors = result.errors.where(
+        (e) => !e.record.startsWith('catalog'),
+      );
       expect(recordErrors, isEmpty);
     });
 
@@ -353,7 +375,9 @@ void main() {
         poems: poems,
         assignments: [],
       );
-      final recordErrors = result.errors.where((e) => !e.record.startsWith('catalog'));
+      final recordErrors = result.errors.where(
+        (e) => !e.record.startsWith('catalog'),
+      );
       expect(recordErrors, isEmpty);
     });
 
@@ -363,7 +387,9 @@ void main() {
         poems: poems,
         assignments: [],
       );
-      final recordErrors = result.errors.where((e) => !e.record.startsWith('catalog'));
+      final recordErrors = result.errors.where(
+        (e) => !e.record.startsWith('catalog'),
+      );
       expect(recordErrors, isEmpty);
     });
 
@@ -381,7 +407,9 @@ void main() {
         poems: poems,
         assignments: [],
       );
-      final recordErrors = result.errors.where((e) => !e.record.startsWith('catalog'));
+      final recordErrors = result.errors.where(
+        (e) => !e.record.startsWith('catalog'),
+      );
       expect(recordErrors, isEmpty);
     });
   });
@@ -448,11 +476,16 @@ void main() {
 
     test('24. wrong English/Polish count fails', () {
       final poems = [
-        _validPoem(id: 'e1'), _validPoem(id: 'e2'),
-        _validPoem(id: 'e3'), _validPoem(id: 'e4'),
-        _validPoem(id: 'e5'), _validPoem(id: 'e6'),
-        _validPoem(id: 'e7'), _validPoem(id: 'e8'),
-        _validPoem(id: 'e9'), _validPoem(id: 'e10'),
+        _validPoem(id: 'e1'),
+        _validPoem(id: 'e2'),
+        _validPoem(id: 'e3'),
+        _validPoem(id: 'e4'),
+        _validPoem(id: 'e5'),
+        _validPoem(id: 'e6'),
+        _validPoem(id: 'e7'),
+        _validPoem(id: 'e8'),
+        _validPoem(id: 'e9'),
+        _validPoem(id: 'e10'),
         _validPoem(id: 'p1', languageCode: 'pl', countryCode: 'PL'),
         _validPoem(id: 'p2', languageCode: 'pl', countryCode: 'PL'),
         _validPoem(id: 'p3', languageCode: 'pl', countryCode: 'PL'),
@@ -488,22 +521,35 @@ void main() {
 
     test('27. date range validation fails', () {
       final poems = _fullPoemSet();
-      final assignments = [_validAssignment(
-        id: 'en_20260101', date: '2026-01-01', poemId: 'en_poem_a',
-      )];
+      final assignments = [
+        _validAssignment(
+          id: 'en_20260101',
+          date: '2026-01-01',
+          poemId: 'en_poem_a',
+        ),
+      ];
       final result = CatalogValidator.validateData(
         poems: poems,
         assignments: assignments,
       );
       expect(result.isValid, isFalse);
-      expect(result.errors.any((e) => e.field == 'assignments.date_range'), isTrue);
+      expect(
+        result.errors.any((e) => e.field == 'assignments.date_range'),
+        isTrue,
+      );
     });
 
     test('28. poem never used fails', () {
       final poems = _fullPoemSet();
       final result = CatalogValidator.validateData(
         poems: poems,
-        assignments: [_validAssignment(id: 'en_20260730', date: '2026-07-30', poemId: 'en_poem_a')],
+        assignments: [
+          _validAssignment(
+            id: 'en_20260730',
+            date: '2026-07-30',
+            poemId: 'en_poem_a',
+          ),
+        ],
       );
       expect(result.isValid, isFalse);
       expect(result.errors.any((e) => e.field == 'poem.never_used'), isTrue);

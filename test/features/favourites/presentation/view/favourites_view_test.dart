@@ -608,10 +608,12 @@ void main() {
       expect(titleText.style?.color, equals(AppColors.lightFg));
     } else {
       final defaultTextStyle = tester.widget<DefaultTextStyle>(
-        find.ancestor(
-          of: find.text('Favourites'),
-          matching: find.byType(DefaultTextStyle),
-        ).first,
+        find
+            .ancestor(
+              of: find.text('Favourites'),
+              matching: find.byType(DefaultTextStyle),
+            )
+            .first,
       );
       expect(defaultTextStyle.style.color, equals(AppColors.lightFg));
     }
@@ -672,10 +674,7 @@ void main() {
     whenListen(
       mockCubit,
       const Stream<FavouritesState>.empty(),
-      initialState: const FavouritesLoaded(
-        poems: [],
-        favouriteIds: {},
-      ),
+      initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
     );
 
     await tester.pumpWidget(buildTestWidget());

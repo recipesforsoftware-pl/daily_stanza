@@ -356,9 +356,9 @@ class _LanguageStep extends StatelessWidget {
                     subtitle: 'English-language poetry',
                     selected: state.language == PoemLanguage.english,
                     onTap: () {
-                      context
-                          .read<LanguagePreferencesCubit>()
-                          .changeLanguage(PoemLanguage.english);
+                      context.read<LanguagePreferencesCubit>().changeLanguage(
+                        PoemLanguage.english,
+                      );
                     },
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -368,9 +368,9 @@ class _LanguageStep extends StatelessWidget {
                     subtitle: 'Polish poetry',
                     selected: state.language == PoemLanguage.polish,
                     onTap: () {
-                      context
-                          .read<LanguagePreferencesCubit>()
-                          .changeLanguage(PoemLanguage.polish);
+                      context.read<LanguagePreferencesCubit>().changeLanguage(
+                        PoemLanguage.polish,
+                      );
                     },
                   ),
                 ],
@@ -430,9 +430,9 @@ class _ThemeStep extends StatelessWidget {
                     subtitle: 'Match device',
                     selected: state.preference == ThemePreference.system,
                     onTap: () {
-                      context
-                          .read<ThemePreferencesCubit>()
-                          .changeTheme(ThemePreference.system);
+                      context.read<ThemePreferencesCubit>().changeTheme(
+                        ThemePreference.system,
+                      );
                     },
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -442,9 +442,9 @@ class _ThemeStep extends StatelessWidget {
                     subtitle: 'Warm cream',
                     selected: state.preference == ThemePreference.light,
                     onTap: () {
-                      context
-                          .read<ThemePreferencesCubit>()
-                          .changeTheme(ThemePreference.light);
+                      context.read<ThemePreferencesCubit>().changeTheme(
+                        ThemePreference.light,
+                      );
                     },
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -454,9 +454,9 @@ class _ThemeStep extends StatelessWidget {
                     subtitle: 'Calm navy',
                     selected: state.preference == ThemePreference.dark,
                     onTap: () {
-                      context
-                          .read<ThemePreferencesCubit>()
-                          .changeTheme(ThemePreference.dark);
+                      context.read<ThemePreferencesCubit>().changeTheme(
+                        ThemePreference.dark,
+                      );
                     },
                   ),
                 ],

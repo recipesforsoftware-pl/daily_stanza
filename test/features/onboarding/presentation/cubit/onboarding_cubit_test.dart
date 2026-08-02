@@ -157,11 +157,7 @@ void main() {
           'isCompleting',
           isTrue,
         ),
-        isA<OnboardingState>().having(
-          (s) => s.completed,
-          'completed',
-          isTrue,
-        ),
+        isA<OnboardingState>().having((s) => s.completed, 'completed', isTrue),
       ],
       verify: (_) {
         verify(() => mockRepository.setOnboardingCompleted()).called(1);
@@ -224,11 +220,7 @@ void main() {
             .having((s) => s.mutationError, 'no error while saving', isNull),
         isA<OnboardingState>()
             .having((s) => s.isCompleting, 'isCompleting', isTrue)
-            .having(
-              (s) => s.mutationError,
-              'no error while saving',
-              isNull,
-            ),
+            .having((s) => s.mutationError, 'no error while saving', isNull),
         isA<OnboardingState>().having(
           (s) => s.mutationError,
           'safe error message',

@@ -3,10 +3,9 @@ import 'package:daily_stanza/features/onboarding/domain/repository/onboarding_re
 import 'package:daily_stanza/features/onboarding/presentation/cubit/onboarding_state.dart';
 
 class OnboardingCubit extends Cubit<OnboardingState> {
-  OnboardingCubit({
-    required OnboardingRepository repository,
-  }) : _repository = repository,
-       super(const OnboardingState()) {
+  OnboardingCubit({required OnboardingRepository repository})
+    : _repository = repository,
+      super(const OnboardingState()) {
     _resolve();
   }
 
@@ -60,10 +59,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       );
     } catch (_) {
       emit(
-        state.copyWith(
-          isCompleting: false,
-          mutationError: () => _errorMessage,
-        ),
+        state.copyWith(isCompleting: false, mutationError: () => _errorMessage),
       );
     }
   }

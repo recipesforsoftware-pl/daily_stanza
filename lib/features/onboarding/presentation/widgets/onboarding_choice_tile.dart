@@ -129,7 +129,9 @@ class _CheckIndicator extends StatelessWidget {
         shape: BoxShape.circle,
         color: selected ? accent : Colors.transparent,
         border: Border.all(
-          color: selected ? accent : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+          color: selected
+              ? accent
+              : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
           width: 1.5,
         ),
       ),

@@ -100,9 +100,7 @@ void main() {
       when(
         () => repo.getPreferredLanguage(),
       ).thenAnswer((_) async => PoemLanguage.english);
-      when(
-        () => repo.setPreferredLanguage(any()),
-      ).thenAnswer((_) async {});
+      when(() => repo.setPreferredLanguage(any())).thenAnswer((_) async {});
       return repo;
     }
 
@@ -111,9 +109,7 @@ void main() {
       when(
         () => repo.getPreferredTheme(),
       ).thenAnswer((_) async => ThemePreference.system);
-      when(
-        () => repo.setPreferredTheme(any()),
-      ).thenAnswer((_) async {});
+      when(() => repo.setPreferredTheme(any())).thenAnswer((_) async {});
       return repo;
     }
 
@@ -181,20 +177,14 @@ void main() {
 
     OnboardingCubit createIncompleteCubit() {
       final repo = MockOnboardingRepository();
-      when(
-        () => repo.isOnboardingCompleted(),
-      ).thenAnswer((_) async => false);
-      when(
-        () => repo.setOnboardingCompleted(),
-      ).thenAnswer((_) async {});
+      when(() => repo.isOnboardingCompleted()).thenAnswer((_) async => false);
+      when(() => repo.setOnboardingCompleted()).thenAnswer((_) async {});
       return OnboardingCubit(repository: repo);
     }
 
     OnboardingCubit createCompletedCubit() {
       final repo = MockOnboardingRepository();
-      when(
-        () => repo.isOnboardingCompleted(),
-      ).thenAnswer((_) async => true);
+      when(() => repo.isOnboardingCompleted()).thenAnswer((_) async => true);
       return OnboardingCubit(repository: repo);
     }
 
@@ -260,7 +250,9 @@ void main() {
       await cubit.close();
     });
 
-    testWidgets('completed onboarding redirects Splash to Today', (tester) async {
+    testWidgets('completed onboarding redirects Splash to Today', (
+      tester,
+    ) async {
       final cubit = createCompletedCubit();
       final bundle = buildRouterApp(onboardingCubit: cubit);
 
@@ -291,48 +283,51 @@ void main() {
       await cubit.close();
     });
 
-    testWidgets('finishing onboarding enters Today without onboarding on back stack', (
+    testWidgets(
+      'finishing onboarding enters Today without onboarding on back stack',
+      (tester) async {
+        final cubit = createIncompleteCubit();
+        final bundle = buildRouterApp(onboardingCubit: cubit);
+
+        await tester.pumpWidget(bundle.widget);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(find.byType(OnboardingScreen), findsOneWidget);
+        expect(find.text('Today'), findsNothing);
+
+        // Complete all four steps.
+        await tester.tap(find.text('Continue'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await tester.tap(find.text('Continue'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await tester.tap(find.text('Continue'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        await tester.tap(find.text('Start reading'));
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(find.text('Today'), findsOneWidget);
+        expect(find.byType(OnboardingScreen), findsNothing);
+        expect(bundle.router.state.matchedLocation, '/today');
+
+        // Onboarding is not on the back stack: the only route is Today.
+        expect(bundle.router.canPop(), isFalse);
+        expect(find.text('Today'), findsOneWidget);
+
+        await cubit.close();
+      },
+    );
+
+    testWidgets('existing poem-details routing continues to work', (
       tester,
     ) async {
-      final cubit = createIncompleteCubit();
-      final bundle = buildRouterApp(onboardingCubit: cubit);
-
-      await tester.pumpWidget(bundle.widget);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(find.byType(OnboardingScreen), findsOneWidget);
-      expect(find.text('Today'), findsNothing);
-
-      // Complete all four steps.
-      await tester.tap(find.text('Continue'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-
-      await tester.tap(find.text('Continue'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-
-      await tester.tap(find.text('Continue'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-
-      await tester.tap(find.text('Start reading'));
-      await tester.pump();
-      await tester.pumpAndSettle();
-
-      expect(find.text('Today'), findsOneWidget);
-      expect(find.byType(OnboardingScreen), findsNothing);
-      expect(bundle.router.state.matchedLocation, '/today');
-
-      // Onboarding is not on the back stack: the only route is Today.
-      expect(bundle.router.canPop(), isFalse);
-      expect(find.text('Today'), findsOneWidget);
-
-      await cubit.close();
-    });
-
-    testWidgets('existing poem-details routing continues to work', (tester) async {
       final cubit = createCompletedCubit();
       final bundle = buildRouterApp(onboardingCubit: cubit);
 
@@ -351,12 +346,8 @@ void main() {
   group('OnboardingScreen widget flow', () {
     testWidgets('first launch shows Splash then Onboarding', (tester) async {
       final repo = MockOnboardingRepository();
-      when(
-        () => repo.isOnboardingCompleted(),
-      ).thenAnswer((_) async => false);
-      when(
-        () => repo.setOnboardingCompleted(),
-      ).thenAnswer((_) async {});
+      when(() => repo.isOnboardingCompleted()).thenAnswer((_) async => false);
+      when(() => repo.setOnboardingCompleted()).thenAnswer((_) async {});
       final cubit = OnboardingCubit(repository: repo);
 
       await tester.pumpWidget(
@@ -388,17 +379,13 @@ void main() {
       when(
         () => langRepo.getPreferredLanguage(),
       ).thenAnswer((_) async => PoemLanguage.english);
-      when(
-        () => langRepo.setPreferredLanguage(any()),
-      ).thenAnswer((_) async {});
+      when(() => langRepo.setPreferredLanguage(any())).thenAnswer((_) async {});
 
       final themeRepo = MockThemePreferencesRepository();
       when(
         () => themeRepo.getPreferredTheme(),
       ).thenAnswer((_) async => ThemePreference.system);
-      when(
-        () => themeRepo.setPreferredTheme(any()),
-      ).thenAnswer((_) async {});
+      when(() => themeRepo.setPreferredTheme(any())).thenAnswer((_) async {});
 
       final onboardingCubit = OnboardingCubit(repository: onboardingRepo);
       final langCubit = LanguagePreferencesCubit(
@@ -468,17 +455,13 @@ void main() {
       when(
         () => langRepo.getPreferredLanguage(),
       ).thenAnswer((_) async => PoemLanguage.english);
-      when(
-        () => langRepo.setPreferredLanguage(any()),
-      ).thenAnswer((_) async {});
+      when(() => langRepo.setPreferredLanguage(any())).thenAnswer((_) async {});
 
       final themeRepo = MockThemePreferencesRepository();
       when(
         () => themeRepo.getPreferredTheme(),
       ).thenAnswer((_) async => ThemePreference.system);
-      when(
-        () => themeRepo.setPreferredTheme(any()),
-      ).thenAnswer((_) async {});
+      when(() => themeRepo.setPreferredTheme(any())).thenAnswer((_) async {});
 
       final onboardingCubit = OnboardingCubit(repository: onboardingRepo);
       final langCubit = LanguagePreferencesCubit(
@@ -531,17 +514,13 @@ void main() {
       when(
         () => langRepo.getPreferredLanguage(),
       ).thenAnswer((_) async => PoemLanguage.english);
-      when(
-        () => langRepo.setPreferredLanguage(any()),
-      ).thenAnswer((_) async {});
+      when(() => langRepo.setPreferredLanguage(any())).thenAnswer((_) async {});
 
       final themeRepo = MockThemePreferencesRepository();
       when(
         () => themeRepo.getPreferredTheme(),
       ).thenAnswer((_) async => ThemePreference.system);
-      when(
-        () => themeRepo.setPreferredTheme(any()),
-      ).thenAnswer((_) async {});
+      when(() => themeRepo.setPreferredTheme(any())).thenAnswer((_) async {});
 
       final onboardingCubit = OnboardingCubit(repository: onboardingRepo);
       final langCubit = LanguagePreferencesCubit(
