@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page.title | default: site.title }} — Daily Stanza</title>
+  <meta name="description" content="{{ page.description | default: site.description }}">
+  <link rel="stylesheet" href="{{ '/assets/styles.css' | relative_url }}">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <header class="container">
+    <p class="site-title"><a href="{{ '/' | relative_url }}">{{ site.title }}</a></p>
+    <nav aria-label="Primary">
+      <ul>
+        <li><a href="{{ '/privacy/' | relative_url }}">Privacy Policy</a></li>
+        <li><a href="{{ '/support/' | relative_url }}">Support</a></li>
+        <li><a href="https://github.com/recipesforsoftware-pl/daily_stanza">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main-content" class="container">
+    {{ content }}
+  </main>
+
+  <footer class="container">
+    <p>
+      Daily Stanza is an open-source Flutter app.
+      <a href="https://github.com/recipesforsoftware-pl/daily_stanza">Source code</a>
+      ·
+      <a href="https://github.com/recipesforsoftware-pl/daily_stanza/issues">Issues</a>
+      ·
+      <a href="mailto:recipesforsoftware@gmail.com">recipesforsoftware@gmail.com</a>
+    </p>
+    <p>Licensed under the <a href="https://github.com/recipesforsoftware-pl/daily_stanza/blob/main/LICENSE">MIT License</a>.</p>
+  </footer>
+</body>
+</html>

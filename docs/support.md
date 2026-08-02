@@ -80,12 +80,17 @@ Clearing this data is permanent and cannot be undone.
 For details on what information Daily Stanza stores and why, see the
 [Privacy Policy](../PRIVACY_POLICY.md).
 
-## Getting help and reporting bugs
+## Contact support
 
-Daily Stanza uses **GitHub Issues** as its public support channel. If you
-encounter a problem or have a question, please open an issue:
+You can get help or report a problem in either of these ways:
 
-<https://github.com/recipesforsoftware-pl/daily_stanza/issues>
+- **Email** — [recipesforsoftware@gmail.com](mailto:recipesforsoftware@gmail.com)
+- **GitHub Issues** —
+  <https://github.com/recipesforsoftware-pl/daily_stanza/issues>
+
+Please use only one channel for the same question. We review both, but we do
+not promise a specific response time, service level, refund, or guaranteed
+resolution.
 
 ### What to include in a bug report
 
