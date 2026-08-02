@@ -1,0 +1,292 @@
+name: Android Release Bundle
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-production-release
+  cancel-in-progress: false
+
+jobs:
+  validate-source:
+    name: Validate release source
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require main branch
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Android production releases must be run from main."
+            echo "::error::Current ref: $GITHUB_REF"
+            exit 1
+          fi
+
+          echo "Release source accepted: $GITHUB_REF"
+          echo "Commit: $GITHUB_SHA"
+
+  build-release:
+    name: Build signed Android App Bundle
+    needs: validate-source
+    runs-on: ubuntu-latest
+
+    environment:
+      name: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check tracked files for credentials
+        run: ./tool/check_no_tracked_secrets.sh
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Restore Firebase client configuration
+        shell: bash
+        env:
+          FIREBASE_OPTIONS_DART_B64: ${{ secrets.FIREBASE_OPTIONS_DART_B64 }}
+          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
+          GOOGLE_SERVICE_INFO_PLIST_B64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_B64 }}
+        run: |
+          set -euo pipefail
+          umask 077
+
+          test -n "$FIREBASE_OPTIONS_DART_B64"
+          test -n "$GOOGLE_SERVICES_JSON_B64"
+          test -n "$GOOGLE_SERVICE_INFO_PLIST_B64"
+
+          mkdir -p lib android/app ios/Runner
+
+          printf '%s' "$FIREBASE_OPTIONS_DART_B64" \
+            | base64 --decode > lib/firebase_options.dart
+
+          printf '%s' "$GOOGLE_SERVICES_JSON_B64" \
+            | base64 --decode > android/app/google-services.json
+
+          printf '%s' "$GOOGLE_SERVICE_INFO_PLIST_B64" \
+            | base64 --decode > ios/Runner/GoogleService-Info.plist
+
+          chmod 600 \
+            lib/firebase_options.dart \
+            android/app/google-services.json \
+            ios/Runner/GoogleService-Info.plist
+
+          test -s lib/firebase_options.dart
+          test -s android/app/google-services.json
+          test -s ios/Runner/GoogleService-Info.plist
+
+      - name: Restore Android release signing
+        shell: bash
+        env:
+          ANDROID_UPLOAD_KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 }}
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ vars.ANDROID_UPLOAD_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          umask 077
+
+          test -n "$ANDROID_UPLOAD_KEYSTORE_B64"
+          test -n "$ANDROID_UPLOAD_STORE_PASSWORD"
+          test -n "$ANDROID_UPLOAD_KEY_PASSWORD"
+          test -n "$ANDROID_UPLOAD_KEY_ALIAS"
+
+          upload_keystore="$RUNNER_TEMP/daily-stanza-upload.p12"
+
+          printf '%s' "$ANDROID_UPLOAD_KEYSTORE_B64" \
+            | base64 --decode > "$upload_keystore"
+
+          chmod 600 "$upload_keystore"
+          test -s "$upload_keystore"
+
+          export DAILY_STANZA_UPLOAD_KEYSTORE="$upload_keystore"
+
+          python3 <<'PY'
+          import os
+          from pathlib import Path
+
+          def escape_property(value: str) -> str:
+              return (
+                  value.replace("\\", "\\\\")
+                  .replace("\t", "\\t")
+                  .replace("\n", "\\n")
+                  .replace("\r", "\\r")
+                  .replace("\f", "\\f")
+                  .replace("=", "\\=")
+                  .replace(":", "\\:")
+                  .replace("#", "\\#")
+                  .replace("!", "\\!")
+              )
+
+          properties = {
+              "storePassword": os.environ["ANDROID_UPLOAD_STORE_PASSWORD"],
+              "keyPassword": os.environ["ANDROID_UPLOAD_KEY_PASSWORD"],
+              "keyAlias": os.environ["ANDROID_UPLOAD_KEY_ALIAS"],
+              "storeFile": os.environ["DAILY_STANZA_UPLOAD_KEYSTORE"],
+          }
+
+          output = "".join(
+              f"{key}={escape_property(value)}\n"
+              for key, value in properties.items()
+          )
+
+          path = Path("android/key.properties")
+          path.write_text(output, encoding="utf-8")
+          path.chmod(0o600)
+          PY
+
+          test -s android/key.properties
+
+      - name: Verify restored signing key
+        shell: bash
+        env:
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ vars.ANDROID_UPLOAD_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+
+          keytool -list -v \
+            -storetype PKCS12 \
+            -keystore "$RUNNER_TEMP/daily-stanza-upload.p12" \
+            -alias "$ANDROID_UPLOAD_KEY_ALIAS" \
+            -storepass:env ANDROID_UPLOAD_STORE_PASSWORD \
+            > "$RUNNER_TEMP/upload-key-information.txt"
+
+          grep -F "PrivateKeyEntry" \
+            "$RUNNER_TEMP/upload-key-information.txt" > /dev/null
+
+          echo "Android upload signing key verified."
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git ls-files -z '*.dart' |
+            xargs -0 dart format --output=none --set-exit-if-changed
+
+      - name: Analyze code
+        run: flutter analyze --no-pub
+
+      - name: Run tests
+        run: flutter test --no-pub
+
+      - name: Build signed Android App Bundle
+        run: flutter build appbundle --release --no-pub
+
+      - name: Verify signed Android App Bundle
+        shell: bash
+        env:
+          ANDROID_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS: ${{ vars.ANDROID_UPLOAD_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+
+          aab_path="build/app/outputs/bundle/release/app-release.aab"
+          keystore_path="$RUNNER_TEMP/daily-stanza-upload.p12"
+
+          test -s "$aab_path"
+
+          jarsigner -verify "$aab_path" \
+            > "$RUNNER_TEMP/jarsigner-verification.txt" 2>&1
+
+          grep -F "jar verified." \
+            "$RUNNER_TEMP/jarsigner-verification.txt" > /dev/null
+
+          keystore_sha1="$(
+            keytool -list -v \
+              -storetype PKCS12 \
+              -keystore "$keystore_path" \
+              -alias "$ANDROID_UPLOAD_KEY_ALIAS" \
+              -storepass:env ANDROID_UPLOAD_STORE_PASSWORD |
+            awk -F'SHA1: ' '/SHA1:/ {print $2; exit}'
+          )"
+
+          keystore_sha256="$(
+            keytool -list -v \
+              -storetype PKCS12 \
+              -keystore "$keystore_path" \
+              -alias "$ANDROID_UPLOAD_KEY_ALIAS" \
+              -storepass:env ANDROID_UPLOAD_STORE_PASSWORD |
+            awk -F'SHA256: ' '/SHA256:/ {print $2; exit}'
+          )"
+
+          aab_sha1="$(
+            keytool -printcert -jarfile "$aab_path" |
+            awk -F'SHA1: ' '/SHA1:/ {print $2; exit}'
+          )"
+
+          aab_certificate_sha256="$(
+            keytool -printcert -jarfile "$aab_path" |
+            awk -F'SHA256: ' '/SHA256:/ {print $2; exit}'
+          )"
+
+          test -n "$keystore_sha1"
+          test -n "$keystore_sha256"
+          test -n "$aab_sha1"
+          test -n "$aab_certificate_sha256"
+
+          test "$keystore_sha1" = "$aab_sha1"
+          test "$keystore_sha256" = "$aab_certificate_sha256"
+
+          aab_file_sha256="$(sha256sum "$aab_path" | awk '{print $1}')"
+          app_version="$(awk '/^version:/ {print $2; exit}' pubspec.yaml)"
+
+          metadata_path="build/app/outputs/bundle/release/release-metadata.txt"
+
+          cat > "$metadata_path" <<EOF
+          application=Daily Stanza
+          package=pl.recipesforsoftware.dailystanza
+          version=$app_version
+          repository=$GITHUB_REPOSITORY
+          commit=$GITHUB_SHA
+          ref=$GITHUB_REF
+          aab_file_sha256=$aab_file_sha256
+          upload_certificate_sha1=$aab_sha1
+          upload_certificate_sha256=$aab_certificate_sha256
+          EOF
+
+          echo "Signed Android App Bundle verified."
+          echo "AAB SHA-256: $aab_file_sha256"
+
+      - name: Upload signed Android release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-stanza-android-${{ github.sha }}
+          path: |
+            build/app/outputs/bundle/release/app-release.aab
+            build/app/outputs/bundle/release/release-metadata.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Remove temporary signing material
+        if: always()
+        shell: bash
+        run: |
+          rm -f \
+            android/key.properties \
+            "$RUNNER_TEMP/daily-stanza-upload.p12" \
+            "$RUNNER_TEMP/upload-key-information.txt" \
+            "$RUNNER_TEMP/jarsigner-verification.txt" \
+            lib/firebase_options.dart \
+            android/app/google-services.json \
+            ios/Runner/GoogleService-Info.plist
