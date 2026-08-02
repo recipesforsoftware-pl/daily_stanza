@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:daily_stanza/core/theme/app_colors.dart';
+import 'package:daily_stanza/core/theme/app_theme.dart';
 import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
 import 'package:daily_stanza/features/daily_poem/domain/repository/poem_repository.dart';
 import 'package:daily_stanza/features/daily_poem/presentation/bloc/daily_poem_bloc.dart';
@@ -65,16 +67,32 @@ const _longPoem = Poem(
   rightsStatus: 'public_domain',
 );
 
+const _shortLinePoem = Poem(
+  id: 'short1',
+  title: 'Na zdrowie',
+  author: 'Jan Kochanowski',
+  languageCode: 'pl',
+  countryCode: 'PL',
+  content: 'Szczęść\nBoże\npijmy\nzdrowie',
+  sourceName: 'Fraszki',
+  sourceUrl: 'https://pl.wikisource.org',
+  rightsStatus: 'public_domain',
+);
+
 Widget _buildApp({
   required MockDailyPoemBloc dailyPoemBloc,
   MockFavouritesCubit? favouritesCubit,
   MockLanguagePreferencesCubit? languageCubit,
   PoemShareCubit? shareCubit,
+  ThemeMode themeMode = ThemeMode.light,
 }) {
   final favCubit = favouritesCubit ?? _createDefaultFavCubit();
   final langCubit = languageCubit ?? _createDefaultLangCubit();
   final shareCubitValue = shareCubit ?? _createDefaultShareCubit();
   return MaterialApp(
+    theme: AppTheme.light,
+    darkTheme: AppTheme.dark,
+    themeMode: themeMode,
     home: MultiBlocProvider(
       providers: [
         BlocProvider<FavouritesCubit>.value(value: favCubit),
@@ -619,6 +637,513 @@ void main() {
       // Poem should still be visible.
       expect(find.text('The Tyger'), findsOneWidget);
       expect(find.text('William Blake'), findsOneWidget);
+    });
+
+    // --- Dark-theme contrast tests ---
+
+    testWidgets('dark theme: date colour is not a hardcoded light token', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          dailyPoemBloc: bloc,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      final dateText = tester.widget<Text>(
+        find.byKey(const ValueKey('dailyPoemDate')),
+      );
+      expect(dateText.style?.color, isNot(equals(const Color(0xFF5D6080))));
+    });
+
+    testWidgets('dark theme: poem title uses a readable on-surface colour', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          dailyPoemBloc: bloc,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      final titleText = tester.widget<Text>(find.text('The Tyger'));
+      expect(titleText.style?.color, equals(AppColors.darkFg));
+    });
+
+    testWidgets('dark theme: author uses onSurfaceVariant (muted) colour', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          dailyPoemBloc: bloc,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      final authorText = tester.widget<Text>(find.text('William Blake'));
+      expect(authorText.style?.color, equals(AppColors.darkMuted));
+    });
+
+    testWidgets('dark theme: poem body uses on-surface colour', (tester) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          dailyPoemBloc: bloc,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      final bodyText = tester.widget<Text>(
+        find.textContaining('Tyger Tyger, burning bright'),
+      );
+      expect(bodyText.style?.color, equals(AppColors.darkFg));
+    });
+
+    testWidgets('dark theme: language and country chips use readable colours', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          dailyPoemBloc: bloc,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      final chipText = tester.widget<Text>(find.text('English'));
+      expect(chipText.style?.color, equals(AppColors.darkMuted));
+    });
+
+    testWidgets('dark theme: favourite icon uses theme-aware colours', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          dailyPoemBloc: bloc,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byIcon(Icons.favorite_outline), findsOneWidget);
+    });
+
+    testWidgets('light theme: no forced white foreground on text', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      final titleText = tester.widget<Text>(find.text('The Tyger'));
+      expect(titleText.style?.color, isNot(equals(Colors.white)));
+      final authorText = tester.widget<Text>(find.text('William Blake'));
+      expect(authorText.style?.color, isNot(equals(Colors.white)));
+      final bodyText = tester.widget<Text>(
+        find.textContaining('Tyger Tyger, burning bright'),
+      );
+      expect(bodyText.style?.color, isNot(equals(Colors.white)));
+    });
+
+    testWidgets('dark theme: loading state title uses readable foreground', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoading(),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, themeMode: ThemeMode.dark),
+      );
+      await tester.pump();
+
+      expect(find.textContaining("Finding today's poem"), findsOneWidget);
+    });
+
+    testWidgets('dark theme: missing state title uses readable foreground', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemMissing(),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, themeMode: ThemeMode.dark),
+      );
+      await tester.pump();
+
+      expect(find.text("Today's poem is not available yet"), findsOneWidget);
+      expect(find.text('Please try again later.'), findsOneWidget);
+    });
+
+    testWidgets('dark theme: error state retry action is visible', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemFailure(
+          failureType: DailyPoemFailureType.network,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, themeMode: ThemeMode.dark),
+      );
+      await tester.pump();
+
+      expect(find.text('Try again'), findsOneWidget);
+    });
+
+    testWidgets('dark theme: long poem scrolls without overflow', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _longPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          dailyPoemBloc: bloc,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('dark theme: offline banner text is readable', (tester) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(poem: _testPoem, isFromCache: true),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          dailyPoemBloc: bloc,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.textContaining('previously downloaded poem'), findsOneWidget);
+    });
+
+    testWidgets('dark theme: small viewport produces no layout exceptions', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          dailyPoemBloc: bloc,
+          favouritesCubit: favCubit,
+          themeMode: ThemeMode.dark,
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    // --- Poem card width regression tests ---
+
+    testWidgets('short poem card fills the available content width', (
+      tester,
+    ) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _shortLinePoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      final cardSize = tester.getSize(find.byType(Card));
+      expect(cardSize.width, 560);
+    });
+
+    testWidgets('short and long poems produce the same card width', (
+      tester,
+    ) async {
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      // Short poem
+      final shortBloc = MockDailyPoemBloc();
+      whenListen(
+        shortBloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _shortLinePoem,
+          isFromCache: false,
+        ),
+      );
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: shortBloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+      final shortWidth = tester.getSize(find.byType(Card)).width;
+
+      // Long poem
+      final longBloc = MockDailyPoemBloc();
+      whenListen(
+        longBloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _longPoem,
+          isFromCache: false,
+        ),
+      );
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: longBloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+      final longWidth = tester.getSize(find.byType(Card)).width;
+
+      expect(shortWidth, equals(longWidth));
+    });
+
+    testWidgets('card respects horizontal page padding', (tester) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _testPoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      final cardSize = tester.getSize(find.byType(Card));
+      const totalHorizontalPadding = 40.0;
+      // Card width + page padding must not exceed viewport width
+      expect(cardSize.width + totalHorizontalPadding, lessThanOrEqualTo(800.0));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('short poem produces no horizontal overflow', (tester) async {
+      final bloc = MockDailyPoemBloc();
+      whenListen(
+        bloc,
+        const Stream<DailyPoemState>.empty(),
+        initialState: const DailyPoemLoaded(
+          poem: _shortLinePoem,
+          isFromCache: false,
+        ),
+      );
+      final favCubit = MockFavouritesCubit();
+      whenListen(
+        favCubit,
+        const Stream<FavouritesState>.empty(),
+        initialState: const FavouritesLoaded(poems: [], favouriteIds: {}),
+      );
+
+      await tester.pumpWidget(
+        _buildApp(dailyPoemBloc: bloc, favouritesCubit: favCubit),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
     });
   });
 }

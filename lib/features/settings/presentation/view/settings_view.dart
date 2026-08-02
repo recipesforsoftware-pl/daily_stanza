@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:daily_stanza/core/config/app_links.dart';
 import 'package:daily_stanza/core/theme/app_spacing.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
+import 'package:daily_stanza/features/settings/domain/service/external_link_launcher.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/app_information_cubit.dart';
+import 'package:daily_stanza/features/settings/presentation/cubit/app_information_state.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
@@ -143,8 +147,109 @@ class SettingsView extends StatelessWidget {
               );
             },
           ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // ---- App information section ----
+          Text('App information', style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.sm),
+          BlocBuilder<AppInformationCubit, AppInformationState>(
+            builder: (context, state) {
+              final appInfo = state.appInfo;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _InfoRow(
+                    label: 'Application name',
+                    value: appInfo?.appName ?? 'Daily Stanza',
+                  ),
+                  _InfoRow(label: 'Version', value: _formatVersion(state)),
+                ],
+              );
+            },
+          ),
+          _LinkRow(label: 'GitHub repository', url: AppLinks.githubRepository),
+          _LinkRow(label: 'Privacy policy', url: AppLinks.privacyPolicy),
         ],
       ),
     );
+  }
+
+  String _formatVersion(AppInformationState state) {
+    final appInfo = state.appInfo;
+    if (appInfo == null) return '—';
+    final build = appInfo.buildNumber;
+    if (build.isEmpty) return appInfo.version;
+    return 'Version ${appInfo.version} ($build)';
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      minTileHeight: 48,
+      title: Text(label, style: theme.textTheme.bodyLarge),
+      trailing: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 200),
+        child: Text(
+          value,
+          textAlign: TextAlign.end,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+}
+
+class _LinkRow extends StatelessWidget {
+  const _LinkRow({required this.label, required this.url});
+
+  final String label;
+  final Uri url;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final launcher = context.read<ExternalLinkLauncher>();
+    return Semantics(
+      button: true,
+      label: '$label, opens in external browser',
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        minTileHeight: 48,
+        title: Text(label, style: theme.textTheme.bodyLarge),
+        trailing: Icon(
+          Icons.open_in_new,
+          size: 20,
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
+        onTap: () => _launchLink(context, launcher),
+      ),
+    );
+  }
+
+  Future<void> _launchLink(
+    BuildContext context,
+    ExternalLinkLauncher launcher,
+  ) async {
+    final success = await launcher.launchUrl(url);
+    if (!success && context.mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Could not open the link.')),
+        );
+    }
   }
 }

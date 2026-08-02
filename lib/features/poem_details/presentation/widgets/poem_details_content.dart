@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:daily_stanza/core/theme/app_colors.dart';
 import 'package:daily_stanza/core/theme/app_text_styles.dart';
 import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
@@ -28,26 +27,24 @@ class PoemDetailsContent extends StatelessWidget {
                     favState is FavouritesLoaded &&
                     favState.updatingPoemIds.contains(poem.id);
 
+                final colors = Theme.of(context).colorScheme;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title
                     Text(
                       poem.title,
                       style: AppTextStyles.displaySmall.copyWith(
-                        color: AppColors.lightFg,
+                        color: colors.onSurface,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    // Author
                     Text(
                       poem.author,
                       style: AppTextStyles.poemAuthor.copyWith(
-                        color: AppColors.lightMuted,
+                        color: colors.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // Language and country chips
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -57,18 +54,15 @@ class PoemDetailsContent extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    // Full poem body
                     SelectableText(
                       poem.content,
                       style: AppTextStyles.poemBody.copyWith(
-                        color: AppColors.lightFg,
+                        color: colors.onSurface,
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Source and rights
                     _SourceAndRights(poem: poem),
                     const SizedBox(height: 20),
-                    // Favourite toggle
                     Center(
                       child: Semantics(
                         label: isFav
@@ -79,8 +73,8 @@ class PoemDetailsContent extends StatelessWidget {
                             isFav ? Icons.favorite : Icons.favorite_outline,
                           ),
                           color: isFav
-                              ? AppColors.lightAccent
-                              : AppColors.lightMuted,
+                              ? colors.primary
+                              : colors.onSurfaceVariant,
                           iconSize: 28,
                           onPressed: isUpdating
                               ? null
@@ -144,16 +138,19 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.lightSurface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.lightBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Text(
         label,
-        style: AppTextStyles.labelMedium.copyWith(color: AppColors.lightMuted),
+        style: AppTextStyles.labelMedium.copyWith(
+          color: colors.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -166,17 +163,22 @@ class _SourceAndRights extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Source: ${poem.sourceName}',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.lightMuted),
+          style: AppTextStyles.bodySmall.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           'Rights: ${poem.rightsStatus.replaceAll('_', ' ')}',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.lightMuted),
+          style: AppTextStyles.bodySmall.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
         ),
       ],
     );

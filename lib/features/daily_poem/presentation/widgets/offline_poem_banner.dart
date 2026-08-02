@@ -1,28 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:daily_stanza/core/theme/app_colors.dart';
 
 class OfflinePoemBanner extends StatelessWidget {
   const OfflinePoemBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.lightHighlight.withValues(alpha: 0.3),
+        color: colors.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.cloud_off_outlined, size: 18, color: AppColors.lightMuted),
-          SizedBox(width: 8),
+          Icon(
+            Icons.cloud_off_outlined,
+            size: 18,
+            color: colors.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               "You're offline. Showing a previously downloaded poem.",
               style: TextStyle(
                 fontSize: 13,
-                color: AppColors.lightMuted,
+                color: colors.onSurfaceVariant,
                 height: 1.4,
               ),
             ),

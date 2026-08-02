@@ -15,8 +15,11 @@ import 'package:daily_stanza/features/favourites/presentation/widgets/favourite_
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_cubit.dart';
 import 'package:daily_stanza/features/poem_details/presentation/cubit/poem_details_state.dart';
 import 'package:daily_stanza/features/poem_details/presentation/view/poem_details_view.dart';
+import 'package:daily_stanza/features/settings/domain/model/app_info.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
+import 'package:daily_stanza/features/settings/domain/service/app_info_service.dart';
+import 'package:daily_stanza/features/settings/domain/service/external_link_launcher.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_state.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
@@ -39,6 +42,10 @@ class MockThemePreferencesCubit
 class MockPoemRepository extends Mock implements PoemRepository {}
 
 class MockPoemShareService extends Mock implements PoemShareService {}
+
+class MockAppInfoService extends Mock implements AppInfoService {}
+
+class MockExternalLinkLauncher extends Mock implements ExternalLinkLauncher {}
 
 const _testPoem = Poem(
   id: 'poem1',
@@ -67,6 +74,7 @@ PoemShareCubit _createDefaultShareCubit() {
 void main() {
   setUpAll(() {
     registerFallbackValue(PoemShareResult.completed);
+    registerFallbackValue(Uri());
   });
   group('FavouritePoemCard onOpen', () {
     testWidgets('onOpen is invoked when tapping the card content', (
@@ -241,6 +249,24 @@ void main() {
       return cubit;
     }
 
+    MockAppInfoService createDefaultAppInfoService() {
+      final service = MockAppInfoService();
+      when(() => service.getAppInfo()).thenAnswer(
+        (_) async => const AppInfo(
+          appName: 'Daily Stanza',
+          version: '1.0.0',
+          buildNumber: '1',
+        ),
+      );
+      return service;
+    }
+
+    MockExternalLinkLauncher createDefaultExternalLinkLauncher() {
+      final launcher = MockExternalLinkLauncher();
+      when(() => launcher.launchUrl(any())).thenAnswer((_) async => true);
+      return launcher;
+    }
+
     ({GoRouter router, Widget widget}) buildRouterApp({
       required MockPoemRepository mockRepo,
       required MockFavouritesCubit mockFavCubit,
@@ -250,10 +276,18 @@ void main() {
       final router = createRouter();
       final langCubit = mockLangCubit ?? createDefaultLangCubit();
       final themeCubit = mockThemeCubit ?? createDefaultThemeCubit();
+      final appInfoService = createDefaultAppInfoService();
+      final externalLinkLauncher = createDefaultExternalLinkLauncher();
       return (
         router: router,
-        widget: RepositoryProvider<PoemRepository>.value(
-          value: mockRepo,
+        widget: MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<PoemRepository>.value(value: mockRepo),
+            RepositoryProvider<AppInfoService>.value(value: appInfoService),
+            RepositoryProvider<ExternalLinkLauncher>.value(
+              value: externalLinkLauncher,
+            ),
+          ],
           child: MultiBlocProvider(
             providers: [
               BlocProvider<FavouritesCubit>.value(value: mockFavCubit),

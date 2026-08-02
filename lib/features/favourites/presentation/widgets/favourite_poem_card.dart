@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:daily_stanza/core/theme/app_colors.dart';
 import 'package:daily_stanza/core/theme/app_spacing.dart';
 import 'package:daily_stanza/core/theme/app_text_styles.dart';
 import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
@@ -20,14 +19,15 @@ class FavouritePoemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Card(
         elevation: 1,
         shadowColor: Colors.black.withValues(alpha: 0.06),
-        shape: const RoundedRectangleBorder(
+        shape: RoundedRectangleBorder(
           borderRadius: AppSpacing.borderRadiusMd,
-          side: BorderSide(color: AppColors.lightBorder),
+          side: BorderSide(color: colors.outlineVariant),
         ),
         child: InkWell(
           onTap: onOpen,
@@ -50,7 +50,7 @@ class FavouritePoemCard extends StatelessWidget {
                             Text(
                               poem.title,
                               style: AppTextStyles.poemTitle.copyWith(
-                                color: AppColors.lightFg,
+                                color: colors.onSurface,
                                 fontSize: 18,
                               ),
                               maxLines: 2,
@@ -60,7 +60,7 @@ class FavouritePoemCard extends StatelessWidget {
                             Text(
                               poem.author,
                               style: AppTextStyles.poemAuthor.copyWith(
-                                color: AppColors.lightMuted,
+                                color: colors.onSurfaceVariant,
                                 fontSize: 14,
                               ),
                               maxLines: 1,
@@ -75,7 +75,7 @@ class FavouritePoemCard extends StatelessWidget {
                       label: 'Remove from favourites',
                       child: IconButton(
                         icon: const Icon(Icons.delete_outline, size: 20),
-                        color: AppColors.lightMuted,
+                        color: colors.onSurfaceVariant,
                         onPressed: isRemoving ? null : onRemove,
                         tooltip: 'Remove from favourites',
                       ),
@@ -94,7 +94,7 @@ class FavouritePoemCard extends StatelessWidget {
                 Text(
                   poem.content,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.lightMuted,
+                    color: colors.onSurfaceVariant,
                     height: 1.5,
                   ),
                   maxLines: 3,
@@ -140,17 +140,18 @@ class _MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.lightSurface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.lightBorder),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Text(
         label,
         style: AppTextStyles.labelMedium.copyWith(
-          color: AppColors.lightMuted,
+          color: colors.onSurfaceVariant,
           fontSize: 11,
         ),
       ),

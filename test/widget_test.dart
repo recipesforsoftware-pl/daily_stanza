@@ -10,8 +10,11 @@ import 'package:daily_stanza/features/favourites/domain/repository/favourites_re
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
 import 'package:daily_stanza/features/settings/domain/model/poem_language.dart';
 import 'package:daily_stanza/features/settings/domain/model/theme_preference.dart';
+import 'package:daily_stanza/features/settings/domain/model/app_info.dart';
 import 'package:daily_stanza/features/settings/domain/repository/language_preferences_repository.dart';
 import 'package:daily_stanza/features/settings/domain/repository/theme_preferences_repository.dart';
+import 'package:daily_stanza/features/settings/domain/service/app_info_service.dart';
+import 'package:daily_stanza/features/settings/domain/service/external_link_launcher.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/language_preferences_cubit.dart';
 import 'package:daily_stanza/features/settings/presentation/cubit/theme_preferences_cubit.dart';
 
@@ -25,12 +28,22 @@ class MockLanguagePreferencesRepository extends Mock
 class MockThemePreferencesRepository extends Mock
     implements ThemePreferencesRepository {}
 
+class MockAppInfoService extends Mock implements AppInfoService {}
+
+class MockExternalLinkLauncher extends Mock implements ExternalLinkLauncher {}
+
 void main() {
+  setUpAll(() {
+    registerFallbackValue(Uri());
+  });
+
   testWidgets('App renders without error', (tester) async {
     final mockPoemRepo = MockPoemRepository();
     final mockFavRepo = MockFavouritesRepository();
     final mockLangRepo = MockLanguagePreferencesRepository();
     final mockThemeRepo = MockThemePreferencesRepository();
+    final mockAppInfoService = MockAppInfoService();
+    final mockExternalLinkLauncher = MockExternalLinkLauncher();
     when(
       () => mockPoemRepo.getDailyPoem(
         date: any(named: 'date'),
@@ -59,6 +72,16 @@ void main() {
     when(
       () => mockThemeRepo.getPreferredTheme(),
     ).thenAnswer((_) async => ThemePreference.system);
+    when(() => mockAppInfoService.getAppInfo()).thenAnswer(
+      (_) async => const AppInfo(
+        appName: 'Daily Stanza',
+        version: '1.0.0',
+        buildNumber: '1',
+      ),
+    );
+    when(
+      () => mockExternalLinkLauncher.launchUrl(any()),
+    ).thenAnswer((_) async => true);
 
     await tester.pumpWidget(
       MultiRepositoryProvider(
@@ -70,6 +93,10 @@ void main() {
           ),
           RepositoryProvider<ThemePreferencesRepository>.value(
             value: mockThemeRepo,
+          ),
+          RepositoryProvider<AppInfoService>.value(value: mockAppInfoService),
+          RepositoryProvider<ExternalLinkLauncher>.value(
+            value: mockExternalLinkLauncher,
           ),
         ],
         child: MultiBlocProvider(

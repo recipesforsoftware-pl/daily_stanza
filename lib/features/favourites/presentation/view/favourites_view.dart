@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:daily_stanza/core/theme/app_colors.dart';
 import 'package:daily_stanza/core/theme/app_text_styles.dart';
 import 'package:daily_stanza/features/daily_poem/domain/model/poem.dart';
 import 'package:daily_stanza/features/favourites/presentation/cubit/favourites_cubit.dart';
@@ -80,6 +79,7 @@ class _FavouritesList extends StatelessWidget {
 class _FailureView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return SafeArea(
       child: Center(
         child: Padding(
@@ -90,7 +90,7 @@ class _FailureView extends StatelessWidget {
               Text(
                 'Unable to load favourites',
                 style: AppTextStyles.headlineSmall.copyWith(
-                  color: AppColors.lightFg,
+                  color: colors.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -98,7 +98,7 @@ class _FailureView extends StatelessWidget {
               Text(
                 'Something went wrong. Please try again.',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.lightMuted,
+                  color: colors.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -109,18 +109,6 @@ class _FailureView extends StatelessWidget {
                 },
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Try again'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.lightAccent,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(0, 48),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
               ),
             ],
           ),

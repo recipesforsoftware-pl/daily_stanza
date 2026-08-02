@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:daily_stanza/core/theme/app_colors.dart';
 import 'package:daily_stanza/core/theme/app_text_styles.dart';
 
 class FavouritesEmptyView extends StatelessWidget {
@@ -7,6 +6,7 @@ class FavouritesEmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return SafeArea(
       child: Center(
         child: Padding(
@@ -25,7 +25,7 @@ class FavouritesEmptyView extends StatelessWidget {
               Text(
                 'No favourite poems yet',
                 style: AppTextStyles.headlineSmall.copyWith(
-                  color: AppColors.lightFg,
+                  color: colors.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -33,7 +33,7 @@ class FavouritesEmptyView extends StatelessWidget {
               Text(
                 'Save a poem from Today and it will appear here.',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.lightMuted,
+                  color: colors.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
