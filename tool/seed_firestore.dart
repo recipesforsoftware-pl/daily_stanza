@@ -8,7 +8,11 @@
 //
 // Usage:
 //   dart run tool/seed_firestore.dart
-//   dart run tool/seed_firestore.dart --date 2026-07-28
+//   dart run tool/seed_firestore.dart --date 2026-08-03
+//
+// Without --date, the current local calendar date is used. Exactly two daily
+// assignments (one English and one Polish) are written for the selected date
+// together with every poem in the catalog.
 //
 // Requirements:
 //   Start the Firestore emulator first:
@@ -17,32 +21,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-/// All required fields in poems.json entries.
-const _poemRequiredFields = [
-  'id',
-  'title',
-  'author',
-  'languageCode',
-  'countryCode',
-  'content',
-  'sourceName',
-  'sourceUrl',
-  'rightsStatus',
-  'isApproved',
-];
-
-/// All required fields in daily_poems.json entries.
-const _dailyRequiredFields = [
-  'id',
-  'date',
-  'languageCode',
-  'poemId',
-  'isPublished',
-];
+import 'seed_selector.dart';
 
 Future<void> main(List<String> arguments) async {
   final date = _parseDate(arguments);
-  final compactDate = _formatCompactDate(date);
   final isoDate = _formatIsoDate(date);
 
   const projectId = 'demo-daily-stanza';
@@ -65,31 +47,25 @@ Future<void> main(List<String> arguments) async {
   final poems = _loadJsonArray(poemsFile);
   final dailyPoems = _loadJsonArray(dailyPoemsFile);
 
-  // Assignment document IDs use yyyyMMdd, while the stored date field
-  // uses the ISO yyyy-MM-dd format.
-  for (final dailyPoem in dailyPoems) {
-    final languageCode = dailyPoem['languageCode'];
-
-    if (languageCode is! String || languageCode.isEmpty) {
-      stderr.writeln(
-        'Error: daily poem assignment has an invalid languageCode',
-      );
-      exit(1);
-    }
-
-    dailyPoem['id'] = '${languageCode}_$compactDate';
-    dailyPoem['date'] = isoDate;
+  // Validate the complete catalogs, then select the assignments for the
+  // requested date. No Firestore write happens until both succeed.
+  final SeedPlan plan;
+  try {
+    plan = buildSeedPlan(
+      poems: poems,
+      assignments: dailyPoems,
+      isoDate: isoDate,
+    );
+  } on SeedSelectionException catch (error) {
+    stderr.writeln('Error: $error');
+    exit(1);
   }
 
-  _validatePoems(poems);
-  _validateDailyPoems(dailyPoems);
-  _validateCrossReferences(poems, dailyPoems);
-
   final client = HttpClient();
-  var writtenDocuments = 0;
+  final writtenDocuments = <String>{};
 
   try {
-    for (final poem in poems) {
+    for (final poem in plan.poems) {
       final documentId = poem['id'] as String;
 
       await _writeDocument(
@@ -100,11 +76,11 @@ Future<void> main(List<String> arguments) async {
         data: poem,
       );
 
-      writtenDocuments++;
+      writtenDocuments.add(documentId);
       stdout.writeln('  ✓ poems/$documentId');
     }
 
-    for (final dailyPoem in dailyPoems) {
+    for (final dailyPoem in plan.assignments) {
       final documentId = dailyPoem['id'] as String;
 
       await _writeDocument(
@@ -115,7 +91,7 @@ Future<void> main(List<String> arguments) async {
         data: dailyPoem,
       );
 
-      writtenDocuments++;
+      writtenDocuments.add(documentId);
       stdout.writeln('  ✓ daily_poems/$documentId');
     }
   } on SocketException catch (error) {
@@ -133,7 +109,7 @@ Future<void> main(List<String> arguments) async {
     client.close(force: true);
   }
 
-  stdout.writeln('\nDone. $writtenDocuments documents written.');
+  stdout.writeln('\nDone. ${writtenDocuments.length} documents written.');
 }
 
 void _ensureFileExists(File file) {
@@ -184,14 +160,6 @@ DateTime _parseIsoDate(String value) {
   return date;
 }
 
-String _formatCompactDate(DateTime date) {
-  final year = date.year.toString().padLeft(4, '0');
-  final month = date.month.toString().padLeft(2, '0');
-  final day = date.day.toString().padLeft(2, '0');
-
-  return '$year$month$day';
-}
-
 String _formatIsoDate(DateTime date) {
   final year = date.year.toString().padLeft(4, '0');
   final month = date.month.toString().padLeft(2, '0');
@@ -225,104 +193,6 @@ List<Map<String, dynamic>> _loadJsonArray(File file) {
       'Error: ${file.path} contains invalid JSON: ${error.message}',
     );
     exit(1);
-  }
-}
-
-void _validatePoems(List<Map<String, dynamic>> poems) {
-  for (var index = 0; index < poems.length; index++) {
-    final poem = poems[index];
-
-    for (final field in _poemRequiredFields) {
-      if (field == 'isApproved') {
-        if (poem[field] is! bool || poem[field] != true) {
-          stderr.writeln('Error: poems.json[$index] "$field" must be true');
-          exit(1);
-        }
-
-        continue;
-      }
-
-      final value = poem[field];
-
-      if (value == null || (value is String && value.trim().isEmpty)) {
-        stderr.writeln(
-          'Error: poems.json[$index] '
-          'missing required field "$field"',
-        );
-        exit(1);
-      }
-    }
-  }
-}
-
-void _validateDailyPoems(List<Map<String, dynamic>> dailyPoems) {
-  for (var index = 0; index < dailyPoems.length; index++) {
-    final dailyPoem = dailyPoems[index];
-
-    for (final field in _dailyRequiredFields) {
-      if (field == 'isPublished') {
-        if (dailyPoem[field] is! bool || dailyPoem[field] != true) {
-          stderr.writeln(
-            'Error: daily_poems.json[$index] '
-            '"$field" must be true',
-          );
-          exit(1);
-        }
-
-        continue;
-      }
-
-      if (field == 'date') {
-        final value = dailyPoem[field];
-
-        if (value is! String || value.trim().isEmpty) {
-          stderr.writeln(
-            'Error: daily_poems.json[$index] '
-            'missing required field "$field"',
-          );
-          exit(1);
-        }
-
-        if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) {
-          stderr.writeln(
-            'Error: daily_poems.json[$index] '
-            '"date" must be YYYY-MM-DD, got "$value"',
-          );
-          exit(1);
-        }
-
-        continue;
-      }
-
-      final value = dailyPoem[field];
-
-      if (value == null || (value is String && value.trim().isEmpty)) {
-        stderr.writeln(
-          'Error: daily_poems.json[$index] '
-          'missing required field "$field"',
-        );
-        exit(1);
-      }
-    }
-  }
-}
-
-void _validateCrossReferences(
-  List<Map<String, dynamic>> poems,
-  List<Map<String, dynamic>> dailyPoems,
-) {
-  final poemIds = poems.map((poem) => poem['id']).whereType<String>().toSet();
-
-  for (var index = 0; index < dailyPoems.length; index++) {
-    final poemId = dailyPoems[index]['poemId'];
-
-    if (poemId is! String || !poemIds.contains(poemId)) {
-      stderr.writeln(
-        'Error: daily_poems.json[$index] '
-        'references unknown poemId "$poemId"',
-      );
-      exit(1);
-    }
   }
 }
 
