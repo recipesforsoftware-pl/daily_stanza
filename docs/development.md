@@ -55,11 +55,17 @@ firebase emulators:start --only firestore --project demo-daily-stanza
 dart run tool/seed_firestore.dart
 ```
 
-To seed for a specific date:
+This seeds the current local calendar date. To seed for a specific date:
 
 ```sh
-dart run tool/seed_firestore.dart --date 2026-07-28
+dart run tool/seed_firestore.dart --date 2026-08-03
 ```
+
+The seed tool is emulator-only: it targets `demo-daily-stanza` on
+`localhost:8080`, writes every poem in the catalog, and writes exactly two
+daily assignments (one English, one Polish) for the selected date. If the
+selected date has no complete English/Polish pair, the tool prints an error
+and exits without writing anything.
 
 **Terminal 2 (or 3) — Run the app against the emulator:**
 
